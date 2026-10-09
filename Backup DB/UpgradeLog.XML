@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="Backup DB">
+</Property><Property Name="Solution File" Value="D:\Backup SQLChequeWrter\Backup DB\Backup DB.sln">
+</Property><Property Name="User Options File" Value="D:\Backup SQLChequeWrter\Backup DB\Backup DB.suo">
+</Property><Property Name="Date" Value="Friday, September 25, 2009">
+</Property><Property Name="Time" Value="11:04 AM">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="Backup DB.sln" Description="File successfully backed up as D:\Backup SQLChequeWrter\Backup DB\Backup\Backup DB.sln">
+</Event><Event ErrorLevel="0" Project="" Source="Backup DB.suo" Description="File successfully backed up as D:\Backup SQLChequeWrter\Backup DB\Backup\Backup DB.suo">
+</Event><Event ErrorLevel="0" Project="Backup DB" Source="Backup DB.vbproj" Description="Project file successfully backed up as D:\Backup SQLChequeWrter\Backup DB\Backup\Backup DB.vbproj">
+</Event><Event ErrorLevel="0" Project="Backup DB" Source="Backup DB.vbproj.user" Description="Project user file successfully backed up as D:\Backup SQLChequeWrter\Backup DB\Backup\Backup DB.vbproj.user">
+</Event><Event ErrorLevel="0" Project="Backup DB" Source="AssemblyInfo.vb" Description="File successfully backed up as D:\Backup SQLChequeWrter\Backup DB\Backup\AssemblyInfo.vb">
+</Event><Event ErrorLevel="0" Project="Backup DB" Source="Form1.vb" Description="File successfully backed up as D:\Backup SQLChequeWrter\Backup DB\Backup\Form1.vb">
+</Event><Event ErrorLevel="0" Project="Backup DB" Source="Form1.resx" Description="File successfully backed up as D:\Backup SQLChequeWrter\Backup DB\Backup\Form1.resx">
+</Event><Event ErrorLevel="0" Project="Backup DB" Source="Backup DB.vbproj" Description="Project converted successfully">
+</Event><Event ErrorLevel="3" Project="Backup DB" Source="Backup DB.vbproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="Backup DB.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="Backup DB.sln" Description="Converted">
+</Event><Event ErrorLevel="0" Project="Backup DB" Source="Backup DB.vbproj" Description="Scan complete: Upgrade not required for project files.">
+</Event></UpgradeLog>

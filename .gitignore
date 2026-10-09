@@ -1,0 +1,12 @@
+bin/
+obj/
+*.user
+*.suo
+Backup DB/bin/
+Backup DB/obj/
+Logs/
+packages/
+crystal-runtime/
+*.bak
+*.Bak
+2025-01-30

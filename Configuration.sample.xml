@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Settings xmlns:dbcon="Setting">
+	<Database Title="DBSetting">
+		<IPAddress>YOUR-PC\HOME</IPAddress>
+		<DBName>AUTO_ICS</DBName>
+		<UserId>AUTO_ADMIN</UserId>
+		<Password>SET_IN_LOCAL_CONFIGURATION</Password>
+	</Database>
+</Settings>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="PaySlip" targetNamespace="http://tempuri.org/PaySlip.xsd" xmlns:mstns="http://tempuri.org/PaySlip.xsd" xmlns="http://tempuri.org/PaySlip.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:appinfo source="urn:schemas-microsoft-com:xml-msdatasource">
+      <DataSource DefaultConnectionIndex="0" FunctionsComponentName="QueriesTableAdapter" Modifier="AutoLayout, AnsiClass, Class, Public" SchemaSerializationMode="IncludeSchema" xmlns="urn:schemas-microsoft-com:xml-msdatasource">
+        <Connections>
+        </Connections>
+        <Tables>
+        </Tables>
+        <Sources>
+        </Sources>
+      </DataSource>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:element name="PaySlip" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:Generator_UserDSName="PaySlip" msprop:Generator_DataSetName="PaySlip">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="PaySlipDataTable" msprop:Generator_UserTableName="PaySlipDataTable" msprop:Generator_RowDeletedName="PaySlipDataTableRowDeleted" msprop:Generator_RowChangedName="PaySlipDataTableRowChanged" msprop:Generator_RowClassName="PaySlipDataTableRow" msprop:Generator_RowChangingName="PaySlipDataTableRowChanging" msprop:Generator_RowEvArgName="PaySlipDataTableRowChangeEvent" msprop:Generator_RowEvHandlerName="PaySlipDataTableRowChangeEventHandler" msprop:Generator_TableClassName="PaySlipDataTableDataTable" msprop:Generator_TableVarName="tablePaySlipDataTable" msprop:Generator_RowDeletingName="PaySlipDataTableRowDeleting" msprop:Generator_TablePropName="PaySlipDataTable">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="EMP_NO" msprop:Generator_UserColumnName="EMP_NO" msprop:Generator_ColumnPropNameInRow="EMP_NO" msprop:Generator_ColumnVarNameInTable="columnEMP_NO" msprop:Generator_ColumnPropNameInTable="EMP_NOColumn" type="xs:short" minOccurs="0" />
+              <xs:element name="EMP_NAME" msprop:Generator_UserColumnName="EMP_NAME" msprop:Generator_ColumnPropNameInRow="EMP_NAME" msprop:Generator_ColumnVarNameInTable="columnEMP_NAME" msprop:Generator_ColumnPropNameInTable="EMP_NAMEColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="DESIGNATION" msprop:Generator_UserColumnName="DESIGNATION" msprop:Generator_ColumnPropNameInRow="DESIGNATION" msprop:Generator_ColumnVarNameInTable="columnDESIGNATION" msprop:Generator_ColumnPropNameInTable="DESIGNATIONColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="EAR_DESCRIPTION" msprop:Generator_UserColumnName="EAR_DESCRIPTION" msprop:Generator_ColumnPropNameInRow="EAR_DESCRIPTION" msprop:Generator_ColumnVarNameInTable="columnEAR_DESCRIPTION" msprop:Generator_ColumnPropNameInTable="EAR_DESCRIPTIONColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="PAY_VALUE" msprop:Generator_UserColumnName="PAY_VALUE" msprop:Generator_ColumnPropNameInRow="PAY_VALUE" msprop:Generator_ColumnVarNameInTable="columnPAY_VALUE" msprop:Generator_ColumnPropNameInTable="PAY_VALUEColumn" type="xs:decimal" minOccurs="0" />
+              <xs:element name="PAY_YEAR" msprop:Generator_UserColumnName="PAY_YEAR" msprop:Generator_ColumnPropNameInRow="PAY_YEAR" msprop:Generator_ColumnVarNameInTable="columnPAY_YEAR" msprop:Generator_ColumnPropNameInTable="PAY_YEARColumn" type="xs:short" minOccurs="0" />
+              <xs:element name="SAL_MONTH" msprop:Generator_UserColumnName="SAL_MONTH" msprop:Generator_ColumnPropNameInRow="SAL_MONTH" msprop:Generator_ColumnVarNameInTable="columnSAL_MONTH" msprop:Generator_ColumnPropNameInTable="SAL_MONTHColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="SLIP_ORDER" msprop:Generator_UserColumnName="SLIP_ORDER" msprop:Generator_ColumnPropNameInRow="SLIP_ORDER" msprop:Generator_ColumnVarNameInTable="columnSLIP_ORDER" msprop:Generator_ColumnPropNameInTable="SLIP_ORDERColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="BANK" msprop:Generator_UserColumnName="BANK" msprop:Generator_ColumnPropNameInRow="BANK" msprop:Generator_ColumnVarNameInTable="columnBANK" msprop:Generator_ColumnPropNameInTable="BANKColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="BRANCH" msprop:Generator_UserColumnName="BRANCH" msprop:Generator_ColumnPropNameInRow="BRANCH" msprop:Generator_ColumnVarNameInTable="columnBRANCH" msprop:Generator_ColumnPropNameInTable="BRANCHColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="ACC_NO" msprop:Generator_UserColumnName="ACC_NO" msprop:Generator_ColumnPropNameInRow="ACC_NO" msprop:Generator_ColumnVarNameInTable="columnACC_NO" msprop:Generator_ColumnPropNameInTable="ACC_NOColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="DESCRIPTION" msprop:Generator_UserColumnName="DESCRIPTION" msprop:Generator_ColumnPropNameInRow="DESCRIPTION" msprop:Generator_ColumnVarNameInTable="columnDESCRIPTION" msprop:Generator_ColumnPropNameInTable="DESCRIPTIONColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="TEN_NO" msprop:Generator_UserColumnName="TEN_NO" msprop:Generator_ColumnPropNameInRow="TEN_NO" msprop:Generator_ColumnVarNameInTable="columnTEN_NO" msprop:Generator_ColumnPropNameInTable="TEN_NOColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="LOCATION" msprop:Generator_UserColumnName="LOCATION" msprop:Generator_ColumnPropNameInRow="LOCATION" msprop:Generator_ColumnVarNameInTable="columnLOCATION" msprop:Generator_ColumnPropNameInTable="LOCATIONColumn" type="xs:string" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

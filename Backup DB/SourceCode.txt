@@ -1,0 +1,199 @@
+Public Class Form1
+    Inherits System.Windows.Forms.Form
+
+#Region " Windows Form Designer generated code "
+
+    Public Sub New()
+        MyBase.New()
+
+        'This call is required by the Windows Form Designer.
+        InitializeComponent()
+
+        'Add any initialization after the InitializeComponent() call
+
+    End Sub
+
+    'Form overrides dispose to clean up the component list.
+    Protected Overloads Overrides Sub Dispose(ByVal disposing As Boolean)
+        If disposing Then
+            If Not (components Is Nothing) Then
+                components.Dispose()
+            End If
+        End If
+        MyBase.Dispose(disposing)
+    End Sub
+
+    'Required by the Windows Form Designer
+    Private components As System.ComponentModel.IContainer
+
+    'NOTE: The following procedure is required by the Windows Form Designer
+    'It can be modified using the Windows Form Designer.  
+    'Do not modify it using the code editor.
+    Friend WithEvents ProgressBar1 As System.Windows.Forms.ProgressBar
+    Friend WithEvents btnBackup As System.Windows.Forms.Button
+    Friend WithEvents btnRestore As System.Windows.Forms.Button
+    Friend WithEvents lblPercent As System.Windows.Forms.Label
+    Friend WithEvents lblMessage As System.Windows.Forms.Label
+    <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
+        Me.btnBackup = New System.Windows.Forms.Button
+        Me.lblPercent = New System.Windows.Forms.Label
+        Me.ProgressBar1 = New System.Windows.Forms.ProgressBar
+        Me.btnRestore = New System.Windows.Forms.Button
+        Me.lblMessage = New System.Windows.Forms.Label
+        Me.SuspendLayout()
+        '
+        'btnBackup
+        '
+        Me.btnBackup.Location = New System.Drawing.Point(8, 48)
+        Me.btnBackup.Name = "btnBackup"
+        Me.btnBackup.Size = New System.Drawing.Size(88, 23)
+        Me.btnBackup.TabIndex = 0
+        Me.btnBackup.Text = "Begin Backup"
+        '
+        'lblPercent
+        '
+        Me.lblPercent.Location = New System.Drawing.Point(304, 24)
+        Me.lblPercent.Name = "lblPercent"
+        Me.lblPercent.Size = New System.Drawing.Size(40, 16)
+        Me.lblPercent.TabIndex = 1
+        '
+        'ProgressBar1
+        '
+        Me.ProgressBar1.Location = New System.Drawing.Point(8, 24)
+        Me.ProgressBar1.Name = "ProgressBar1"
+        Me.ProgressBar1.Size = New System.Drawing.Size(288, 16)
+        Me.ProgressBar1.TabIndex = 2
+        '
+        'btnRestore
+        '
+        Me.btnRestore.Location = New System.Drawing.Point(208, 48)
+        Me.btnRestore.Name = "btnRestore"
+        Me.btnRestore.Size = New System.Drawing.Size(88, 23)
+        Me.btnRestore.TabIndex = 3
+        Me.btnRestore.Text = "Begin Restore"
+        '
+        'lblMessage
+        '
+        Me.lblMessage.Location = New System.Drawing.Point(8, 8)
+        Me.lblMessage.Name = "lblMessage"
+        Me.lblMessage.Size = New System.Drawing.Size(216, 16)
+        Me.lblMessage.TabIndex = 4
+        '
+        'Form1
+        '
+        Me.AutoScaleBaseSize = New System.Drawing.Size(5, 13)
+        Me.ClientSize = New System.Drawing.Size(352, 77)
+        Me.Controls.Add(Me.lblMessage)
+        Me.Controls.Add(Me.btnRestore)
+        Me.Controls.Add(Me.ProgressBar1)
+        Me.Controls.Add(Me.lblPercent)
+        Me.Controls.Add(Me.btnBackup)
+        Me.Name = "Form1"
+        Me.Text = "Backup & Restore Tool"
+        Me.ResumeLayout(False)
+
+    End Sub
+
+#End Region
+
+    Const _INSTANCE As String = "."
+    Const _USER As String = "sa"
+    Const _PWD As String = ""
+    Const _BACKUPFILE As String = "c:\NorthwindBackup.bkp"
+    Const _DATABASE As String = "Northwind"
+
+    Dim oSQLServer As New SQLDMO.SQLServer
+    Dim WithEvents oBackup As New SQLDMO.Backup
+    Dim WithEvents oRestore As New SQLDMO.Restore
+
+    Private Sub oBackup_PercentComplete(ByVal Message As String, ByVal Percent As Integer) Handles oBackup.PercentComplete
+        showStatus(Percent)
+    End Sub
+
+    Private Sub btnBackup_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnBackup.Click
+        Try
+            Me.lblMessage.Text = "Backup process started.."
+            Me.lblMessage.Refresh()
+            showStatus(0)
+            disableItems()
+            doBackup()
+        Catch ex As Exception
+            MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Stop)
+        Finally
+            showStatus(0)
+            Me.lblMessage.Text = ""
+            Me.lblMessage.Refresh()
+            disableItems(False)
+            oSQLServer.DisConnect()
+            Me.lblMessage.Text = "Backup process completed.."
+            Me.lblMessage.Refresh()
+        End Try
+    End Sub
+
+    Private Sub doBackup()
+        With oBackup
+            '.Devices = "[NorthwindBackup]"
+            .Files = _BACKUPFILE
+            .Database = _DATABASE
+            .BackupSetName = "MyNorthwindBkp"
+            .BackupSetDescription = "Backup from VB.NET application"
+            oSQLServer.Connect(_INSTANCE, _USER, _PWD)
+            .SQLBackup(oSQLServer)
+        End With
+        MessageBox.Show("Backup Completed Sucessfully", "Message", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
+    Private Sub doRestore()
+        With oRestore
+            '.Devices = "[NorthwindBackup]"
+            .Files = _BACKUPFILE
+            .Database = _DATABASE
+            .ReplaceDatabase = True
+            oSQLServer.Connect(_INSTANCE, _USER, _PWD)
+            .SQLRestore(oSQLServer)
+        End With
+        MessageBox.Show("Restore Completed Successfully", "Message", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
+    Private Sub showStatus(ByVal percent As Integer)
+        Me.ProgressBar1.Value = percent
+        Me.ProgressBar1.Refresh()
+        Me.lblPercent.Text = percent & "%"
+        Me.lblPercent.Refresh()
+
+        'this statement is only for better simulation for small databases..please remove it
+        System.Threading.Thread.Sleep(2000)
+    End Sub
+
+    Private Sub disableItems(Optional ByVal enable As Boolean = True)
+        Me.btnBackup.Enabled = Not enable
+        Me.btnRestore.Enabled = Not enable
+        Me.Refresh()
+    End Sub
+
+    Private Sub btnRestore_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnRestore.Click
+        Try
+            Me.lblMessage.Text = "Restore process started.."
+            Me.lblMessage.Refresh()
+            showStatus(0)
+            disableItems()
+            doRestore()
+        Catch ex As Exception
+            MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Stop)
+        Finally
+            showStatus(0)
+            Me.lblMessage.Text = ""
+            Me.lblMessage.Refresh()
+            disableItems(False)
+            oSQLServer.DisConnect()
+            Me.lblMessage.Text = "Restore process completed.."
+            Me.lblMessage.Refresh()
+        End Try
+    End Sub
+
+    Private Sub oRestore_PercentComplete(ByVal Message As String, ByVal Percent As Integer) Handles oRestore.PercentComplete
+        showStatus(Percent)
+    End Sub
+
+   
+End Class

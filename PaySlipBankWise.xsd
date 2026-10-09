@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="PaySlipBankWise" targetNamespace="http://tempuri.org/PaySlipBankWise.xsd" xmlns:mstns="http://tempuri.org/PaySlipBankWise.xsd" xmlns="http://tempuri.org/PaySlipBankWise.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:appinfo source="urn:schemas-microsoft-com:xml-msdatasource">
+      <DataSource DefaultConnectionIndex="0" FunctionsComponentName="QueriesTableAdapter" Modifier="AutoLayout, AnsiClass, Class, Public" SchemaSerializationMode="IncludeSchema" xmlns="urn:schemas-microsoft-com:xml-msdatasource">
+        <Connections>
+        </Connections>
+        <Tables>
+        </Tables>
+        <Sources>
+        </Sources>
+      </DataSource>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:element name="PaySlipBankWise" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:Generator_UserDSName="PaySlipBankWise" msprop:Generator_DataSetName="PaySlipBankWise">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="PaySlipBankWiseDATSET" msprop:Generator_UserTableName="PaySlipBankWiseDATSET" msprop:Generator_RowDeletedName="PaySlipBankWiseDATSETRowDeleted" msprop:Generator_TableClassName="PaySlipBankWiseDATSETDataTable" msprop:Generator_RowChangedName="PaySlipBankWiseDATSETRowChanged" msprop:Generator_RowClassName="PaySlipBankWiseDATSETRow" msprop:Generator_RowChangingName="PaySlipBankWiseDATSETRowChanging" msprop:Generator_RowEvArgName="PaySlipBankWiseDATSETRowChangeEvent" msprop:Generator_RowEvHandlerName="PaySlipBankWiseDATSETRowChangeEventHandler" msprop:Generator_TablePropName="PaySlipBankWiseDATSET" msprop:Generator_TableVarName="tablePaySlipBankWiseDATSET" msprop:Generator_RowDeletingName="PaySlipBankWiseDATSETRowDeleting">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="EMP_NO" msprop:Generator_UserColumnName="EMP_NO" msprop:Generator_ColumnPropNameInRow="EMP_NO" msprop:Generator_ColumnVarNameInTable="columnEMP_NO" msprop:Generator_ColumnPropNameInTable="EMP_NOColumn" type="xs:long" minOccurs="0" />
+              <xs:element name="EMP_NAME" msprop:Generator_UserColumnName="EMP_NAME" msprop:Generator_ColumnPropNameInRow="EMP_NAME" msprop:Generator_ColumnVarNameInTable="columnEMP_NAME" msprop:Generator_ColumnPropNameInTable="EMP_NAMEColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="BANK" msprop:Generator_UserColumnName="BANK" msprop:Generator_ColumnPropNameInRow="BANK" msprop:Generator_ColumnVarNameInTable="columnBANK" msprop:Generator_ColumnPropNameInTable="BANKColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="BRANCH" msprop:Generator_UserColumnName="BRANCH" msprop:Generator_ColumnPropNameInRow="BRANCH" msprop:Generator_ColumnVarNameInTable="columnBRANCH" msprop:Generator_ColumnPropNameInTable="BRANCHColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="ACC_NO" msprop:Generator_UserColumnName="ACC_NO" msprop:Generator_ColumnPropNameInRow="ACC_NO" msprop:Generator_ColumnVarNameInTable="columnACC_NO" msprop:Generator_ColumnPropNameInTable="ACC_NOColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="PAY_VALUE" msprop:Generator_UserColumnName="PAY_VALUE" msprop:Generator_ColumnPropNameInRow="PAY_VALUE" msprop:Generator_ColumnVarNameInTable="columnPAY_VALUE" msprop:Generator_ColumnPropNameInTable="PAY_VALUEColumn" type="xs:double" minOccurs="0" />
+              <xs:element name="PAY_YEAR" msprop:Generator_UserColumnName="PAY_YEAR" msprop:Generator_ColumnPropNameInRow="PAY_YEAR" msprop:Generator_ColumnVarNameInTable="columnPAY_YEAR" msprop:Generator_ColumnPropNameInTable="PAY_YEARColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="SAL_MONTH" msprop:Generator_UserColumnName="SAL_MONTH" msprop:Generator_ColumnPropNameInRow="SAL_MONTH" msprop:Generator_ColumnVarNameInTable="columnSAL_MONTH" msprop:Generator_ColumnPropNameInTable="SAL_MONTHColumn" type="xs:string" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
