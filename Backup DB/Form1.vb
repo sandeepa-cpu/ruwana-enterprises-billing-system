@@ -159,7 +159,7 @@ Public Class frm_Backup
         Me.EditPW.PasswordChar = Global.Microsoft.VisualBasic.ChrW(8226)
         Me.EditPW.Size = New System.Drawing.Size(201, 23)
         Me.EditPW.TabIndex = 10
-        Me.EditPW.Text = "147852369"
+        Me.EditPW.Text = ""
         Me.EditPW.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
         '
         'EditFile
