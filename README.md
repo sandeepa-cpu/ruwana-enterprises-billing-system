@@ -2,6 +2,36 @@
 
 A C# WinForms application for order processing, billing, job-card handling, and customized Crystal Reports invoicing at Ruwana Enterprises.
 
+## System Architecture
+
+```mermaid
+graph TD
+    subgraph UI ["Desktop User Interface (WinForms)"]
+        A[Billing & Order Form]
+        B[Job Card Management UI]
+        C[Inventory & Item Catalog UI]
+    end
+
+    subgraph Logic ["Business Logic Layer"]
+        D[ADO.NET Data Access Layer]
+        E[Configuration Manager]
+    end
+
+    subgraph Storage ["Database & Reporting"]
+        F[(SQL Server: AUTO_ICS)]
+        G[Crystal Reports Engine]
+    end
+
+    H[Configuration.xml] -.-> E
+    A --> D
+    B --> D
+    C --> D
+    E --> D
+    D <--> F
+    A --> G
+    B --> G
+```
+
 ## Core features
 
 - **Job card management** — create and track print jobs from intake through completion
