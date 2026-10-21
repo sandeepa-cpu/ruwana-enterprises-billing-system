@@ -1828,7 +1828,7 @@ namespace Billing_Inventory_Management_System
             // 
             this.BackColor = System.Drawing.Color.Firebrick;
             this.ClientSize = new System.Drawing.Size(1284, 904);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.button32);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.lblLocation);

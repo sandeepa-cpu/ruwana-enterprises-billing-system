@@ -14,6 +14,11 @@ namespace Billing_Inventory_Management_System
         public frm_CreateUsers()
         {
             InitializeComponent();
+            this.Load += delegate
+            {
+                UiTheme.StyleForm(this);
+                comboBox1.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            };
         }
         
         private SqlConnection _Conn;
@@ -36,24 +41,33 @@ namespace Billing_Inventory_Management_System
                     }
                     else
                     {
-                        Connection.DatabaseConnection obyConn;
+                        string level = AccessLevelCode(comboBox1.Text);
+                        if (level == "")
+                        {
+                            MessageBox.Show("Please select an Access Level", "Create Users");
+                            comboBox1.Focus();
+                        }
+                        else
+                        {
+                            Connection.DatabaseConnection obyConn;
 
-                        obyConn = new Connection.DatabaseConnection();
-                        _Conn = obyConn.Connect();
+                            obyConn = new Connection.DatabaseConnection();
+                            _Conn = obyConn.Connect();
 
-                        SqlCommand cmdLoanMain = new SqlCommand("INSERT INTO USER_LOGIN (USER_NAME, USER_ID, PASSWORD, ACC_LEVEL) VALUES (@name, @id, @password, @level)", _Conn);
-                        cmdLoanMain.Parameters.Add("@name", SqlDbType.VarChar, 100).Value = txt_UserName.Text;
-                        cmdLoanMain.Parameters.Add("@id", SqlDbType.VarChar, 50).Value = txt_UserID.Text;
-                        cmdLoanMain.Parameters.Add("@password", SqlDbType.VarChar, 50).Value = txt_Password.Text;
-                        cmdLoanMain.Parameters.Add("@level", SqlDbType.VarChar, 20).Value = cmb_AccLevel.Text;
-                        cmdLoanMain.ExecuteNonQuery();
-                        MessageBox.Show("Entered User Successfully Added", "Create Users");
-                        _Conn.Close();
-                        txt_ConfimPWD.Text = "";
-                        txt_Password.Text = "";
-                        txt_UserID.Text = "";
-                        txt_UserName.Text = "";
-                        txt_UserName.Focus();
+                            SqlCommand cmdLoanMain = new SqlCommand("INSERT INTO USER_LOGIN (USER_NAME, USER_ID, PASSWORD, ACC_LEVEL) VALUES (@name, @id, @password, @level)", _Conn);
+                            cmdLoanMain.Parameters.Add("@name", SqlDbType.VarChar, 100).Value = txt_UserName.Text;
+                            cmdLoanMain.Parameters.Add("@id", SqlDbType.VarChar, 50).Value = txt_UserID.Text;
+                            cmdLoanMain.Parameters.Add("@password", SqlDbType.VarChar, 50).Value = txt_Password.Text;
+                            cmdLoanMain.Parameters.Add("@level", SqlDbType.VarChar, 20).Value = level;
+                            cmdLoanMain.ExecuteNonQuery();
+                            MessageBox.Show("Entered User Successfully Added", "Create Users");
+                            _Conn.Close();
+                            txt_ConfimPWD.Text = "";
+                            txt_Password.Text = "";
+                            txt_UserID.Text = "";
+                            txt_UserName.Text = "";
+                            txt_UserName.Focus();
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -88,20 +102,45 @@ namespace Billing_Inventory_Management_System
             this.Close();
         }
 
-        private void comboBox1_SelectedValueChanged(object sender, EventArgs e)
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (comboBox1.Text == "ADMIN")
+            cmb_AccLevel.Text = AccessLevelCode(comboBox1.Text);
+        }
+
+        private void comboBox1_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            if (e.Index < 0)
             {
-                cmb_AccLevel.Text = "0";
+                return;
             }
-            else if (comboBox1.Text == "USER")
+            bool inEdit = (e.State & DrawItemState.ComboBoxEdit) == DrawItemState.ComboBoxEdit;
+            bool selected = !inEdit && (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+            using (SolidBrush brush = new SolidBrush(selected ? SystemColors.Highlight : comboBox1.BackColor))
             {
-                cmb_AccLevel.Text = "1";
+                e.Graphics.FillRectangle(brush, e.Bounds);
             }
-            else if (comboBox1.Text == "REPORTS ONLY")
+            string label = comboBox1.Items[e.Index].ToString();
+            Color color = selected ? SystemColors.HighlightText : comboBox1.ForeColor;
+            Rectangle bounds = new Rectangle(e.Bounds.X + 8, e.Bounds.Y, e.Bounds.Width - 12, e.Bounds.Height);
+            TextRenderer.DrawText(e.Graphics, label, comboBox1.Font, bounds, color, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            e.DrawFocusRectangle();
+        }
+
+        private static string AccessLevelCode(string label)
+        {
+            if (label == "ADMIN")
             {
-                cmb_AccLevel.Text = "2";
+                return "0";
             }
+            if (label == "USER")
+            {
+                return "1";
+            }
+            if (label == "REPORTS ONLY")
+            {
+                return "2";
+            }
+            return "";
         }
 
         private void txt_UserName_KeyPress(object sender, KeyPressEventArgs e)

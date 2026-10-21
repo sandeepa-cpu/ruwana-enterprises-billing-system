@@ -74,6 +74,7 @@ namespace Billing_Inventory_Management_System
                             
                             frm_Main.Show();
                             this.Hide();
+                            AuditLog.Write("LOGIN", "frm_UserLogIn", "Signed in");
                         }
                         else if (txt_Password.Text != drPwd["PASSWORD"].ToString())
                         {
@@ -132,6 +133,7 @@ namespace Billing_Inventory_Management_System
 
                             frm_Main.Show();
                             this.Hide();
+                            AuditLog.Write("LOGIN", "frm_UserLogIn", "Signed in");
                         }
                         else if (txt_Password.Text != drPwd["PASSWORD"].ToString())
                         {
@@ -157,6 +159,18 @@ namespace Billing_Inventory_Management_System
 
         private void frm_UserLogIn_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
+            UiTheme.RoundPanel(loginCard, 8);
+            this.BackColor = Color.FromArgb(10, 31, 68);
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frm_MainMenu));
+            object logo = resources.GetObject("pictureBox1.Image");
+            if (logo is Image)
+            {
+                pictureBox1.Image = (Image)logo;
+            }
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox1.BackColor = Color.FromArgb(10, 31, 68);
+            pictureBox1.Visible = true;
             txt_Password.Focus();
         }
 

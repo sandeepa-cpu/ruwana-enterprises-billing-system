@@ -306,7 +306,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.SteelBlue;
             this.ClientSize = new System.Drawing.Size(862, 762);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.lblRSEQ);
             this.Controls.Add(this.lbl_Date);
             this.Controls.Add(this.Grid_A);

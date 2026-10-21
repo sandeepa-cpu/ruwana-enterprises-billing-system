@@ -37,12 +37,33 @@ namespace Billing_Inventory_Management_System
         string A = "";
         private SqlConnection _Conn;
         int CUS_ID, SEQ = 0;
+        private string customerKey = "";
+        private Label operatorLabel;
         string APRVD;
         int SEQNOD, SEQNO;
         decimal REMOVETOT = 0;
         private string strCriteria = "";
         private string strReportName = "";
         public String VVehicleNO;
+        private bool loadingJob;
+        private bool fillingCatalog;
+        private bool blankAdvanceOnPrint;
+        private Button btnPayFull;
+        private Button btnPayHalf;
+        private Button btnPayClear;
+        private Button btnAddCustomer;
+        private Label lblCustomerContact;
+        private Label lblStockHint;
+        private decimal availableStock;
+        private bool stockKnown;
+
+        private const string MaterialGroup = "Materials";
+        private const string MaterialMake = "Catalog";
+        private bool resolvingCustomer;
+        private bool draftReady;
+        private bool draftDirty;
+        private bool draftSaved;
+        private System.Windows.Forms.Timer draftTimer;
         Bitmap bitmA;
         String UserName;
 
@@ -78,7 +99,6 @@ namespace Billing_Inventory_Management_System
             SqlDataReader dreader = cmdsql.ExecuteReader();
             while (dreader.Read())
             {
-                dt_Start.Value = Convert.ToDateTime(dreader["PRO_DATE"].ToString());
                 lblDate.Text = dreader["PRO_DATE"].ToString();
             }
             cmdsql.Dispose();
@@ -109,15 +129,18 @@ namespace Billing_Inventory_Management_System
 
         private void frm_JobCreation_Load(object sender, EventArgs e)
         {
-            
+            UiTheme.StyleForm(this);
+            this.Shown += FitJobCard;
             FormActions.Standardize(this);
             btnPay.Enabled = false;
             button31.Enabled = false;
 
             try
             {
-                frm_CustomerProfile frm_Job = new frm_CustomerProfile();
-                txtNo.Text = VVehicleNO.ToString();
+                if (!string.IsNullOrEmpty(VVehicleNO))
+                {
+                    txtNo.Text = VVehicleNO;
+                }
             }
             catch (Exception ex)
             {
@@ -126,26 +149,649 @@ namespace Billing_Inventory_Management_System
 
             FindEmps();
             PRO_DATE();
+            ApplyToday();
             //FindTypes();
             //InsuranceCompany();
-
-            DateTime Current = Convert.ToDateTime(dt_Start.Value);
-            int Days = int.Parse("3");
-            DateTime Next = (Current.AddDays(Days));
-            dt_End.Value = Convert.ToDateTime(Next);
             txtNo.Focus();
             timer1.Enabled = true;
             LoadParts();
             cmbPartNO.Focus();
             LoadCats();
+            SeedMaterialCatalog();
+            FillMaterialCategories();
+            button43.Click += AddPrintCategory;
+            button44.Click += AddPrintItem;
+            LoadCustomers();
+            AssignNextJobNo();
+            txtQty.TextChanged += RefreshJobCost;
+            txtSPAMNT.TextChanged += RefreshJobCost;
+            txtAdvance.TextChanged += RefreshJobCost;
+            StylePaymentArea();
+            AddPaymentShortcuts();
+            AddCustomerTools();
+            AddStockHint();
+            SetCashierTabOrder();
+            RefreshBalance();
+        }
+
+        private void AddCustomerTools()
+        {
+            btnAddCustomer = new Button();
+            btnAddCustomer.Text = "";
+            btnAddCustomer.TabStop = false;
+            btnAddCustomer.Size = new Size(42, 36);
+            btnAddCustomer.FlatStyle = FlatStyle.Flat;
+            btnAddCustomer.FlatAppearance.BorderSize = 0;
+            btnAddCustomer.BackColor = Color.White;
+            btnAddCustomer.UseVisualStyleBackColor = false;
+            btnAddCustomer.BackgroundImage = button43.BackgroundImage;
+            btnAddCustomer.BackgroundImageLayout = ImageLayout.Zoom;
+            btnAddCustomer.Click += AddCustomerQuick;
+            lblCusName.Parent.Controls.Add(btnAddCustomer);
+
+            lblCustomerContact = new Label();
+            lblCustomerContact.AutoSize = false;
+            lblCustomerContact.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+            lblCustomerContact.ForeColor = UiTheme.Muted;
+            lblCustomerContact.Text = "";
+            lblCusName.Parent.Controls.Add(lblCustomerContact);
+            PlaceCustomerTools();
+        }
+
+        private void PlaceCustomerTools()
+        {
+            if (btnAddCustomer == null)
+            {
+                return;
+            }
+            lblCusName.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            if (jobSideActions != null && jobSideActions.Parent == lblCusName.Parent)
+            {
+                int room = jobSideActions.Left - lblCusName.Left - 58;
+                if (room > 280 && lblCusName.Width > room)
+                {
+                    lblCusName.Width = room;
+                }
+            }
+            btnAddCustomer.Location = new Point(lblCusName.Right + 8, lblCusName.Top);
+            btnAddCustomer.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            btnAddCustomer.BringToFront();
+            lblCustomerContact.Visible = true;
+            lblCustomerContact.ForeColor = Color.DarkSlateBlue;
+            lblCustomerContact.Location = new Point(lblCusName.Left, lblCusName.Bottom + 4);
+            lblCustomerContact.Size = new Size(Math.Max(280, lblCusName.Width), 24);
+            lblCustomerContact.TextAlign = ContentAlignment.MiddleLeft;
+            lblCustomerContact.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            lblCustomerContact.BringToFront();
+        }
+
+        private void AddCustomerQuick(object sender, EventArgs e)
+        {
+            Form dialog = new Form();
+            dialog.Text = "New Customer";
+            dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+            dialog.StartPosition = FormStartPosition.CenterParent;
+            dialog.ClientSize = new Size(440, 230);
+            dialog.MaximizeBox = false;
+            dialog.MinimizeBox = false;
+            dialog.Font = UiTheme.Font;
+
+            TextBox title = AddCustomerField(dialog, "Title", 16);
+            TextBox name = AddCustomerField(dialog, "Customer Name", 52);
+            TextBox address = AddCustomerField(dialog, "Address", 88);
+            TextBox mobile = AddCustomerField(dialog, "Mobile No", 124);
+
+            Button save = new Button();
+            save.Text = "Save";
+            save.Size = new Size(90, 32);
+            save.Location = new Point(230, 180);
+            save.DialogResult = DialogResult.OK;
+            UiTheme.StylePrimary(save);
+            Button cancel = new Button();
+            cancel.Text = "Cancel";
+            cancel.Size = new Size(90, 32);
+            cancel.Location = new Point(330, 180);
+            cancel.DialogResult = DialogResult.Cancel;
+            UiTheme.StyleSecondary(cancel);
+            dialog.Controls.Add(save);
+            dialog.Controls.Add(cancel);
+            dialog.AcceptButton = save;
+            dialog.CancelButton = cancel;
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+            {
+                dialog.Dispose();
+                return;
+            }
+            string customerName = name.Text.Trim();
+            string customerTitle = title.Text.Trim();
+            string customerAddress = address.Text.Trim();
+            string customerMobile = mobile.Text.Trim();
+            dialog.Dispose();
+            if (customerName.Length == 0)
+            {
+                MessageBox.Show("Enter the customer name.", "Customer");
+                return;
+            }
+            SaveQuickCustomer(customerTitle, customerName, customerAddress, customerMobile);
+        }
+
+        private TextBox AddCustomerField(Form dialog, string caption, int top)
+        {
+            Label label = new Label();
+            label.Text = caption;
+            label.AutoSize = true;
+            label.Location = new Point(16, top + 4);
+            TextBox box = new TextBox();
+            box.Location = new Point(140, top);
+            box.Width = 280;
+            dialog.Controls.Add(label);
+            dialog.Controls.Add(box);
+            return box;
+        }
+
+        private void SaveQuickCustomer(string title, string name, string address, string mobile)
+        {
+            string fileNo = "Q" + DateTime.Now.ToString("yyMMddHHmmss");
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                SqlCommand cmd = new SqlCommand("INSERT INTO CUSTOMER_INFO (TITLE, NAME, ADDRESS, RESIDENT_NO, MOBILE_NO, FILE_NO, USER_ACTION) VALUES (@title, @name, @address, @resident, @mobile, @file, @action)", conn);
+                cmd.Parameters.Add("@title", SqlDbType.VarChar, 50).Value = title;
+                cmd.Parameters.Add("@name", SqlDbType.VarChar, 200).Value = name;
+                cmd.Parameters.Add("@address", SqlDbType.VarChar, 300).Value = address;
+                cmd.Parameters.Add("@resident", SqlDbType.VarChar, 50).Value = "";
+                cmd.Parameters.Add("@mobile", SqlDbType.VarChar, 50).Value = mobile;
+                cmd.Parameters.Add("@file", SqlDbType.VarChar, 50).Value = fileNo;
+                cmd.Parameters.Add("@action", SqlDbType.VarChar, 10).Value = "1";
+                cmd.ExecuteNonQuery();
+                cmd.Parameters.Clear();
+                cmd.CommandText = "SELECT SEQ_NO FROM CUSTOMER_INFO WHERE FILE_NO = @file";
+                cmd.Parameters.Add("@file", SqlDbType.VarChar, 50).Value = fileNo;
+                object seqValue = cmd.ExecuteScalar();
+                string seq = seqValue == null ? "" : seqValue.ToString();
+                LoadCustomers();
+                lblCusName.Text = name;
+                lblSEQ.Text = seq;
+                customerKey = seq;
+                if (seq.Length > 0)
+                {
+                    ShowUnpaidCredit(seq);
+                    ShowCustomerContact(seq);
+                }
+                AuditLog.Write("EDIT", "frm_JobCreation", name);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.SaveQuickCustomer", ex);
+                MessageBox.Show(ex.Message, "Customer");
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private void ShowCustomerContact(string seq)
+        {
+            if (lblCustomerContact == null)
+            {
+                return;
+            }
+            lblCustomerContact.Text = "";
+            if (seq == null || seq.Trim().Length == 0)
+            {
+                return;
+            }
+            SqlConnection conn = null;
+            SqlDataReader reader = null;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                SqlCommand cmd = new SqlCommand("SELECT ADDRESS, MOBILE_NO, RESIDENT_NO FROM CUSTOMER_INFO WHERE SEQ_NO = @seq", conn);
+                cmd.Parameters.Add("@seq", SqlDbType.VarChar, 50).Value = seq;
+                reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    string address = reader["ADDRESS"].ToString().Trim();
+                    string mobile = reader["MOBILE_NO"].ToString().Trim();
+                    string resident = reader["RESIDENT_NO"].ToString().Trim();
+                    string phone = mobile;
+                    if (resident.Length > 0)
+                    {
+                        if (phone.Length > 0)
+                        {
+                            phone = phone + " / " + resident;
+                        }
+                        else
+                        {
+                            phone = resident;
+                        }
+                    }
+                    if (address.Length > 0 && phone.Length > 0)
+                    {
+                        lblCustomerContact.Text = address + "    " + phone;
+                    }
+                    else
+                    {
+                        lblCustomerContact.Text = address + phone;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.ShowCustomerContact", ex);
+            }
+            finally
+            {
+                if (reader != null)
+                {
+                    reader.Close();
+                }
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private void AddStockHint()
+        {
+            lblStockHint = new Label();
+            lblStockHint.AutoSize = false;
+            lblStockHint.Font = new Font("Segoe UI", 11F, FontStyle.Bold, GraphicsUnit.Point);
+            lblStockHint.TextAlign = ContentAlignment.MiddleLeft;
+            lblStockHint.Text = "";
+            txtQty.Parent.Controls.Add(lblStockHint);
+            PlaceStockHint();
+            lblStockHint.BringToFront();
+        }
+
+        private void StylePaymentArea()
+        {
+            Font amountFont = new Font("Segoe UI", 24F, FontStyle.Bold, GraphicsUnit.Point);
+            lblTOTCOST.AutoSize = false;
+            lblTOTCOST.Font = amountFont;
+            lblTOTCOST.TextAlign = ContentAlignment.MiddleRight;
+            lblTOTCOST.Size = new Size(150, 42);
+            lblBalanceDue.AutoSize = false;
+            lblBalanceDue.Font = amountFont;
+            lblBalanceDue.TextAlign = ContentAlignment.MiddleRight;
+            lblBalanceDue.Size = new Size(150, 42);
+            txtAdvance.Font = new Font("Segoe UI", 18F, FontStyle.Bold, GraphicsUnit.Point);
+            txtAdvance.Width = 160;
+            UiTheme.StylePrimary(button2);
+            PlacePayButton();
+        }
+
+        private Panel jobSideActions;
+
+        private void LayoutJobCard()
+        {
+            LayoutSideActions();
+            LayoutLeftRows();
+            PlaceCustomerTools();
+            LayoutActionBar();
+            PlaceStockHint();
+            LayoutPaymentStrip();
+        }
+
+        private void LayoutLeftRows()
+        {
+            int y = 172;
+            int step = 44;
+            SetFieldRow(label5, dt_Start, null, y, 184);
+            y += step;
+            SetFieldRow(label1, dt_End, null, y, 184);
+            y += step;
+            SetFieldRow(label75, cmbMethod, button1, y, 420);
+            y += step;
+            SetFieldRow(label74, cmbMedia, null, y, 420);
+            y += step;
+            SetFieldRow(label77, cmbCat, button43, y, 420);
+            y += step;
+            SetFieldRow(label4, cmbPartNO, button44, y, 420);
+            y += step;
+            SetFieldRow(label73, txtQty, null, y, 120);
+            label73.BringToFront();
+            lblUOM.AutoSize = true;
+            lblUOM.Font = new Font("Segoe UI", 11F, FontStyle.Bold, GraphicsUnit.Point);
+            lblUOM.ForeColor = Color.DarkSlateBlue;
+            lblUOM.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            lblUOM.Left = txtQty.Right + 8;
+            lblUOM.Top = txtQty.Top + 6;
+            txtSPAMNT.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            txtSPAMNT.Top = txtQty.Top;
+            txtSPAMNT.Left = lblUOM.Right + 12;
+            txtSPAMNT.Width = 140;
+            txtSPAMNT.Height = 32;
+            y += step;
+            label8.AutoSize = true;
+            label8.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            label8.Left = 36;
+            label8.Top = y + 6;
+            label8.BringToFront();
+            txtRemark.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            txtRemark.Left = 200;
+            txtRemark.Top = y;
+            txtRemark.Width = 460;
+            txtRemark.Height = 64;
+            button42.Visible = false;
+            button1.Visible = false;
+        }
+
+        private void SetFieldRow(Control label, Control field, Control extra, int y, int fieldWidth)
+        {
+            label.AutoSize = true;
+            label.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            label.Left = 36;
+            label.Top = y + 6;
+            field.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            field.Left = 200;
+            field.Top = y;
+            field.Width = fieldWidth;
+            field.Height = 32;
+            if (extra != null)
+            {
+                extra.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                extra.Left = field.Right + 6;
+                extra.Top = y - 2;
+            }
+        }
+
+        private void LayoutSideActions()
+        {
+            Control host = btnPrint.Parent;
+            if (jobSideActions == null)
+            {
+                jobSideActions = new Panel();
+                jobSideActions.Name = "jobSideActions";
+                jobSideActions.Size = new Size(228, 168);
+                jobSideActions.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+                host.Controls.Add(jobSideActions);
+            }
+            jobSideActions.Location = new Point(Math.Max(760, host.ClientSize.Width - jobSideActions.Width - 12), 168);
+            Button[] actions = new Button[] { btnPrint, button20, button21 };
+            int top = 8;
+            for (int i = 0; i < actions.Length; i++)
+            {
+                Button action = actions[i];
+                action.Parent = jobSideActions;
+                action.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                action.AutoSize = false;
+                action.AutoEllipsis = false;
+                action.MinimumSize = new Size(208, 44);
+                action.Size = new Size(208, 44);
+                action.Location = new Point(10, top);
+                action.TextAlign = ContentAlignment.MiddleCenter;
+                top += 52;
+            }
+            jobSideActions.Height = top + 4;
+            jobSideActions.BringToFront();
+        }
+
+        private void LayoutActionBar()
+        {
+            Panel bar = this.Controls["actionBar"] as Panel;
+            if (bar == null)
+            {
+                bar = button2.Parent as Panel;
+            }
+            if (bar == null || bar.Name != "actionBar")
+            {
+                PlacePayButton();
+                return;
+            }
+            bar.Height = 72;
+            button2.MinimumSize = new Size(248, 44);
+            button2.AutoSize = false;
+            button2.AutoEllipsis = false;
+            button2.Padding = new Padding(8, 2, 8, 2);
+            button2.TextAlign = ContentAlignment.MiddleCenter;
+            button2.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold, GraphicsUnit.Point);
+            button2.Text = "PAY & PRINT INVOICE";
+            button2.Size = new Size(248, 44);
+            System.Collections.Generic.List<Button> row = new System.Collections.Generic.List<Button>();
+            foreach (Control child in bar.Controls)
+            {
+                Button button = child as Button;
+                if (button != null && button.Visible)
+                {
+                    row.Add(button);
+                }
+            }
+            row.Sort(delegate(Button left, Button right) { return left.Left.CompareTo(right.Left); });
+            int x = bar.ClientSize.Width - 12;
+            int y = Math.Max(8, (bar.ClientSize.Height - 44) / 2);
+            for (int i = row.Count - 1; i >= 0; i--)
+            {
+                Button button = row[i];
+                int width = button == button2 ? 248 : Math.Max(110, button.Width);
+                int height = 44;
+                button.AutoSize = false;
+                button.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                button.Size = new Size(width, height);
+                if (button == button2)
+                {
+                    button.MinimumSize = new Size(248, 44);
+                }
+                x -= width;
+                button.Location = new Point(Math.Max(8, x), y);
+                button.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+                x -= 8;
+            }
+        }
+
+        private void PlaceStockHint()
+        {
+            if (lblStockHint == null)
+            {
+                return;
+            }
+            lblStockHint.Location = new Point(txtSPAMNT.Right + 16, txtSPAMNT.Top);
+            lblStockHint.Height = txtSPAMNT.Height;
+            int limit = lblStockHint.Parent.ClientSize.Width - 16;
+            if (jobSideActions != null && jobSideActions.Parent == lblStockHint.Parent)
+            {
+                limit = jobSideActions.Left - 8;
+            }
+            lblStockHint.Width = Math.Max(180, limit - lblStockHint.Left);
+        }
+
+        private void PlacePayButton()
+        {
+            button2.Text = "PAY & PRINT INVOICE";
+            button2.AutoSize = false;
+            button2.AutoEllipsis = false;
+            button2.Padding = new Padding(8, 0, 8, 0);
+            button2.TextAlign = ContentAlignment.MiddleCenter;
+            button2.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            button2.Width = 248;
+            Panel bar = button2.Parent as Panel;
+            if (bar != null && bar.Name == "actionBar")
+            {
+                button2.Height = Math.Max(28, bar.ClientSize.Height - 16);
+                button2.Top = Math.Max(0, (bar.ClientSize.Height - button2.Height) / 2);
+                button2.Left = Math.Max(8, bar.ClientSize.Width - button2.Width - 12);
+            }
+            else
+            {
+                button2.Height = 36;
+            }
+        }
+
+        private decimal ReadAmount(string text)
+        {
+            if (text == null)
+            {
+                return 0;
+            }
+            string cleaned = text.Trim().Replace(" ", "").Replace(",", "");
+            decimal value;
+            if (decimal.TryParse(cleaned, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out value))
+            {
+                return value;
+            }
+            if (decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out value))
+            {
+                return value;
+            }
+            return 0;
+        }
+
+        private void AddPaymentShortcuts()
+        {
+            btnPayFull = AddPayButton("Full Paid", PayFull);
+            btnPayHalf = AddPayButton("50% Advance", PayHalf);
+            btnPayClear = AddPayButton("Clear", PayClear);
+            PlacePaymentControls();
+        }
+
+        private Button AddPayButton(string text, EventHandler click)
+        {
+            Button button = new Button();
+            button.Text = text;
+            button.TabStop = false;
+            button.Click += click;
+            UiTheme.StyleSecondary(button);
+            txtAdvance.Parent.Controls.Add(button);
+            button.BringToFront();
+            return button;
+        }
+
+        private void PlacePaymentControls()
+        {
+            LayoutPaymentStrip();
+        }
+
+        private void LayoutPaymentStrip()
+        {
+            int top = txtRemark.Bottom + 20;
+            labelAdvance.AutoSize = true;
+            labelAdvance.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            labelAdvance.Left = 36;
+            labelAdvance.Top = top + 6;
+            labelAdvance.BringToFront();
+            txtAdvance.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            txtAdvance.Left = 200;
+            txtAdvance.Top = top;
+            txtAdvance.Width = 140;
+            txtAdvance.Height = 34;
+            if (btnPayFull != null)
+            {
+                btnPayFull.Size = new Size(86, 34);
+                btnPayHalf.Size = new Size(108, 34);
+                btnPayClear.Size = new Size(64, 34);
+                btnPayFull.Location = new Point(txtAdvance.Right + 10, top);
+                btnPayHalf.Location = new Point(btnPayFull.Right + 8, top);
+                btnPayClear.Location = new Point(btnPayHalf.Right + 8, top);
+                btnPayFull.BringToFront();
+                btnPayHalf.BringToFront();
+                btnPayClear.BringToFront();
+            }
+            label72.AutoSize = true;
+            label72.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            label72.Left = btnPayClear == null ? 520 : btnPayClear.Right + 20;
+            label72.Top = top + 6;
+            label72.BringToFront();
+            lblTOTCOST.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            lblTOTCOST.AutoSize = false;
+            lblTOTCOST.Size = new Size(140, 40);
+            lblTOTCOST.Left = label72.Right + 8;
+            lblTOTCOST.Top = top - 2;
+            lblTOTCOST.BringToFront();
+            labelBalanceDue.AutoSize = true;
+            labelBalanceDue.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            labelBalanceDue.Left = 36;
+            labelBalanceDue.Top = top + 50;
+            labelBalanceDue.BringToFront();
+            lblBalanceDue.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            lblBalanceDue.AutoSize = false;
+            lblBalanceDue.Size = new Size(140, 40);
+            lblBalanceDue.Left = 200;
+            lblBalanceDue.Top = top + 42;
+            lblBalanceDue.BringToFront();
+            if (tabControl1.Top < top + 100)
+            {
+                tabControl1.Top = top + 100;
+            }
+        }
+
+        private void PayFull(object sender, EventArgs e)
+        {
+            txtAdvance.Text = Money(lblTOTCOST.Text).ToString("0.00");
+        }
+
+        private void PayHalf(object sender, EventArgs e)
+        {
+            txtAdvance.Text = (Money(lblTOTCOST.Text) / 2m).ToString("0.00");
+        }
+
+        private void PayClear(object sender, EventArgs e)
+        {
+            txtAdvance.Text = "0.00";
+        }
+
+        private void SetCashierTabOrder()
+        {
+            txtNo.TabIndex = 1;
+            lblCusName.TabIndex = 2;
+            cmbPartNO.TabIndex = 3;
+            txtQty.TabIndex = 4;
+            txtSPAMNT.TabIndex = 5;
+            txtAdvance.TabIndex = 6;
+            button2.TabIndex = 7;
+        }
+
+        private void DefaultBlankAdvance()
+        {
+            if (txtAdvance.Text.Trim().Length == 0)
+            {
+                txtAdvance.Text = "0.00";
+                blankAdvanceOnPrint = true;
+            }
+        }
+
+        private void AssignNextJobNo()
+        {
+            if (!string.IsNullOrEmpty(txtNo.Text))
+            {
+                return;
+            }
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                SqlCommand cmd = new SqlCommand("SELECT ISNULL(MAX(CAST(JOB_NO AS int)), 0) + 1 FROM JOB_DETAILS WHERE JOB_NO NOT LIKE '%[^0-9]%' AND JOB_NO <> ''", conn);
+                object value = cmd.ExecuteScalar();
+                if (value != null && value != DBNull.Value)
+                {
+                    txtNo.Text = value.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.AssignNextJobNo", ex);
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
         }
 
         private void LoadCats()
         {
-            cmbCat.Items.Clear();
             cmbMethod.Items.Clear();
-            cmbCat.Items.Clear();
-            cmbPartNO.Items.Clear();
 
             Connection.DatabaseConnection obyConn;
             obyConn = new Connection.DatabaseConnection();
@@ -161,6 +807,288 @@ namespace Billing_Inventory_Management_System
             cmdsql.Dispose();
             dreader.Dispose();
             _Conn.Close();
+        }
+
+        private static string[] MaterialRows()
+        {
+            return new string[] {
+                "Flex|Flex Normal",
+                "Flex|Flex Gloss",
+                "Flex|Flex Matt",
+                "Clear Media|Clear Gloss",
+                "Clear Media|Clear Matt",
+                "A4 Papers/Stickers|A4 Normal Paper",
+                "A4 Papers/Stickers|A4 Sticker Gloss",
+                "A4 Papers/Stickers|A4 Sticker Matt",
+                "A4 Papers/Stickers|A4 Clear Gloss",
+                "A4 Papers/Stickers|A4 Clear Matt",
+                "Boards|Ice Gold Board",
+                "Boards|Ice White Board",
+                "Boards|Cloth Board",
+                "Promotional Items|Mug 11 oz",
+                "Promotional Items|Mug 15 oz",
+                "Promotional Items|Tile 4x4",
+                "Promotional Items|Tile 6x6",
+                "Promotional Items|Tile 8x8",
+                "Promotional Items|Granite 8x8",
+                "Promotional Items|Granite 12x12",
+                "Promotional Items|Glass 4x4",
+                "Promotional Items|Glass 6x6",
+                "Promotional Items|Glass 8x8"
+            };
+        }
+
+        private void SeedMaterialCatalog()
+        {
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                string[] rows = MaterialRows();
+                for (int i = 0; i < rows.Length; i++)
+                {
+                    string[] parts = rows[i].Split('|');
+                    EnsureMaterialCategory(conn, parts[0]);
+                    EnsureMaterialItem(conn, parts[0], parts[1]);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.SeedMaterialCatalog", ex);
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private void EnsureMaterialCategory(SqlConnection conn, string category)
+        {
+            SqlCommand cmd = new SqlCommand("IF NOT EXISTS (SELECT 1 FROM SUB_CATEGORY WHERE CATEGORY = @group AND MAKE = @make AND SUB_CAT = @sub) INSERT INTO SUB_CATEGORY (CATEGORY, MAKE, SUB_CAT) VALUES (@group, @make, @sub)", conn);
+            cmd.Parameters.Add("@group", SqlDbType.VarChar, 100).Value = MaterialGroup;
+            cmd.Parameters.Add("@make", SqlDbType.VarChar, 100).Value = MaterialMake;
+            cmd.Parameters.Add("@sub", SqlDbType.VarChar, 100).Value = category;
+            cmd.ExecuteNonQuery();
+        }
+
+        private void EnsureMaterialItem(SqlConnection conn, string category, string item)
+        {
+            SqlCommand cmd = new SqlCommand("IF NOT EXISTS (SELECT 1 FROM MASTER WHERE PARTNO = @part) INSERT INTO MASTER (CATEGORY, MAKE, SUB_CAT, DESCRIPTION, PARTNO, UOM, ROL, ROQ, LOC, CAB, RACK, BIN, SPNO) VALUES (@group, @make, @sub, @part, @part, 'Nos', 0, 0, '', '', '', '', '')", conn);
+            cmd.Parameters.Add("@part", SqlDbType.VarChar, 100).Value = item;
+            cmd.Parameters.Add("@group", SqlDbType.VarChar, 100).Value = MaterialGroup;
+            cmd.Parameters.Add("@make", SqlDbType.VarChar, 100).Value = MaterialMake;
+            cmd.Parameters.Add("@sub", SqlDbType.VarChar, 100).Value = category;
+            cmd.ExecuteNonQuery();
+        }
+
+        private void FillMaterialCategories()
+        {
+            string keep = cmbCat.Text;
+            fillingCatalog = true;
+            SqlConnection conn = null;
+            try
+            {
+                cmbCat.Items.Clear();
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                SqlCommand cmd = new SqlCommand("SELECT SUB_CAT FROM SUB_CATEGORY WHERE CATEGORY = @group AND MAKE = @make ORDER BY SUB_CAT", conn);
+                cmd.Parameters.Add("@group", SqlDbType.VarChar, 100).Value = MaterialGroup;
+                cmd.Parameters.Add("@make", SqlDbType.VarChar, 100).Value = MaterialMake;
+                SqlDataReader reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    cmbCat.Items.Add(reader["SUB_CAT"].ToString());
+                }
+                reader.Close();
+                if (keep.Length > 0)
+                {
+                    cmbCat.Text = keep;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.FillMaterialCategories", ex);
+            }
+            finally
+            {
+                fillingCatalog = false;
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private void FillMaterialItems(bool keepItem)
+        {
+            string keep = keepItem ? cmbPartNO.Text : "";
+            fillingCatalog = true;
+            SqlConnection conn = null;
+            try
+            {
+                cmbPartNO.Items.Clear();
+                if (!keepItem)
+                {
+                    cmbPartNO.Text = "";
+                }
+                if (cmbCat.Text.Trim().Length == 0)
+                {
+                    return;
+                }
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                SqlCommand cmd = new SqlCommand("SELECT PARTNO FROM MASTER WHERE CATEGORY = @group AND MAKE = @make AND SUB_CAT = @sub ORDER BY PARTNO", conn);
+                cmd.Parameters.Add("@group", SqlDbType.VarChar, 100).Value = MaterialGroup;
+                cmd.Parameters.Add("@make", SqlDbType.VarChar, 100).Value = MaterialMake;
+                cmd.Parameters.Add("@sub", SqlDbType.VarChar, 100).Value = cmbCat.Text.Trim();
+                SqlDataReader reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    cmbPartNO.Items.Add(reader["PARTNO"].ToString());
+                }
+                reader.Close();
+                if (keep.Length > 0)
+                {
+                    cmbPartNO.Text = keep;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.FillMaterialItems", ex);
+            }
+            finally
+            {
+                fillingCatalog = false;
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private string AskMaterialName(string title, string prompt)
+        {
+            Form dialog = new Form();
+            dialog.Text = title;
+            dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+            dialog.StartPosition = FormStartPosition.CenterParent;
+            dialog.MinimizeBox = false;
+            dialog.MaximizeBox = false;
+            dialog.ClientSize = new Size(380, 120);
+            Label label = new Label();
+            label.Text = prompt;
+            label.AutoSize = true;
+            label.Location = new Point(12, 12);
+            TextBox box = new TextBox();
+            box.Location = new Point(12, 40);
+            box.Width = 350;
+            Button ok = new Button();
+            ok.Text = "Add";
+            ok.DialogResult = DialogResult.OK;
+            ok.Location = new Point(196, 76);
+            Button cancel = new Button();
+            cancel.Text = "Cancel";
+            cancel.DialogResult = DialogResult.Cancel;
+            cancel.Location = new Point(282, 76);
+            dialog.Controls.Add(label);
+            dialog.Controls.Add(box);
+            dialog.Controls.Add(ok);
+            dialog.Controls.Add(cancel);
+            dialog.AcceptButton = ok;
+            dialog.CancelButton = cancel;
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+            {
+                return "";
+            }
+            return box.Text.Trim();
+        }
+
+        private void AddPrintCategory(object sender, EventArgs e)
+        {
+            string name = AskMaterialName("Print category", "New print category");
+            if (name.Length == 0)
+            {
+                return;
+            }
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                EnsureMaterialCategory(conn, name);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.AddPrintCategory", ex);
+                MessageBox.Show(ex.Message, "Print category");
+                return;
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+            FillMaterialCategories();
+            cmbCat.Text = name;
+            FillMaterialItems(false);
+        }
+
+        private void AddPrintItem(object sender, EventArgs e)
+        {
+            if (cmbCat.Text.Trim().Length == 0)
+            {
+                MessageBox.Show("Choose a print category first.", "Print items");
+                return;
+            }
+            string name = AskMaterialName("Print item", "New print item");
+            if (name.Length == 0)
+            {
+                return;
+            }
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                SqlCommand existing = new SqlCommand("SELECT TOP 1 SUB_CAT FROM MASTER WHERE PARTNO = @part", conn);
+                existing.Parameters.Add("@part", SqlDbType.VarChar, 100).Value = name;
+                object found = existing.ExecuteScalar();
+                if (found != null && found != DBNull.Value)
+                {
+                    if (found.ToString() != cmbCat.Text.Trim())
+                    {
+                        MessageBox.Show("That item is already in another category.", "Print items");
+                        return;
+                    }
+                }
+                else
+                {
+                    EnsureMaterialItem(conn, cmbCat.Text.Trim(), name);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.AddPrintItem", ex);
+                MessageBox.Show(ex.Message, "Print items");
+                return;
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+            FillMaterialItems(false);
+            cmbPartNO.Text = name;
+            Load_BALQTYS_PARTNO();
+            UOM();
         }
 
         private void ShowDetails()
@@ -338,12 +1266,8 @@ namespace Billing_Inventory_Management_System
         private void button5_Click(object sender, EventArgs e)
         {
             frm_CustomerProfile frmGen = new frm_CustomerProfile();
-
             frmGen.CustomerNO = txtNo.Text;
-            
-
-            frmGen.TopMost = true;
-            frmGen.Show();
+            AppWorkspace.Open(frmGen, "Customer");
             //this.Hide();
         }
 
@@ -477,9 +1401,19 @@ namespace Billing_Inventory_Management_System
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (decimal.Parse(lbl_BalQty.Text) < decimal.Parse(txtQty.Text))
+            DefaultBlankAdvance();
+            try
             {
-                MessageBox.Show("Quantity not Enough for the Job", "Received Goods Info");
+            if (txtNo.Text.Trim().Length > 0 && HasPrintableJob())
+            {
+                if (SettleExistingJob(true))
+                {
+                    button20_Click_1(this, EventArgs.Empty);
+                }
+                return;
+            }
+            if (!StockAllowsSale())
+            {
                 return;
             }
 
@@ -490,6 +1424,7 @@ namespace Billing_Inventory_Management_System
             }
 
             Connection.DatabaseConnection obyConn;
+            bool saved = false;
 
             try
             {
@@ -502,6 +1437,9 @@ namespace Billing_Inventory_Management_System
            
 
                 FindSEQ();
+                SaveJobAmounts();
+                SaveJobLine();
+                SaveInvoiceIdentity();
                 //FindTypes();
                 FindEmps();
                 //ADD_MAIN();
@@ -521,6 +1459,9 @@ namespace Billing_Inventory_Management_System
                 //cmdsql1.ExecuteNonQuery();
 
                 MessageBox.Show("Job Entry Successfully Added. Proceed to the Next step");
+                saved = true;
+                draftSaved = true;
+                DeleteJobDraft();
             }
             catch (Exception ex)
             {
@@ -535,6 +1476,10 @@ namespace Billing_Inventory_Management_System
                     _Conn = null;
                 }
             }
+            if (saved)
+            {
+                button20_Click_1(this, EventArgs.Empty);
+            }
             tabControl1.Visible = true;
             tb1.Visible = true;
             tb2.Visible = true;
@@ -543,6 +1488,38 @@ namespace Billing_Inventory_Management_System
             UPSTOCKS();
             lblBalQty.Text = "";
             txtINVNO.Focus();
+            }
+            finally
+            {
+                blankAdvanceOnPrint = false;
+            }
+        }
+
+        private void PrintSavedJobCard()
+        {
+            frm_Reports report = new frm_Reports();
+            try
+            {
+                try
+                {
+                    report.PrintJobCard(txtNo.Text);
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Write("frm_JobCreation.PrintJobCard", ex);
+                    btnPrint_Click(this, EventArgs.Empty);
+                }
+                report.PrintInvoice(txtNo.Text);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.PrintInvoice", ex);
+                button20_Click_1(this, EventArgs.Empty);
+            }
+            finally
+            {
+                report.Dispose();
+            }
         }
 
         private void FindSEQ()
@@ -724,25 +1701,336 @@ namespace Billing_Inventory_Management_System
 
         private void FINDCAT()
         {
-            cmbCat.Items.Clear();
-
-            Connection.DatabaseConnection obyConn;
-
-            obyConn = new Connection.DatabaseConnection();
-            _Conn = obyConn.Connect();
-
-            SqlCommand cmdReader = new SqlCommand("SELECT SUB_CAT FROM SUB_CATEGORY WHERE MAKE = '"+ cmbMedia.Text +"' AND CATEGORY = '" + cmbMethod.Text + "'", _Conn);
-            SqlDataReader drReader = cmdReader.ExecuteReader();
-            while (drReader.Read())
-            {
-                cmbCat.Items.Add(drReader["SUB_CAT"].ToString()); // + " - " + drTenMain["NAME"].ToString());
-            }
-
-            drReader.Close();
-            _Conn.Close();
         }
 
 
+
+        private decimal Money(string text)
+        {
+            decimal value;
+            if (!decimal.TryParse(text, out value))
+            {
+                return 0;
+            }
+            return value;
+        }
+
+        private string Scalar(SqlConnection conn, string sql, string arg)
+        {
+            SqlCommand cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.Add("@q", SqlDbType.VarChar, 200).Value = arg;
+            object value = cmd.ExecuteScalar();
+            if (value == null || value == DBNull.Value)
+            {
+                return "";
+            }
+            return value.ToString();
+        }
+
+        private string ResolveJobNumber(string typed)
+        {
+            if (typed.Length == 0)
+            {
+                return "";
+            }
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                string job = Scalar(conn, "SELECT TOP 1 JOB_NO FROM JOB_DETAILS WHERE JOB_NO = @q AND STATUS = 1", typed);
+                if (job.Length > 0)
+                {
+                    return job;
+                }
+                job = Scalar(conn, "SELECT TOP 1 JOB_NO FROM JOB_DETAILS WHERE INV_NO = @q AND STATUS = 1", typed);
+                if (job.Length > 0)
+                {
+                    return job;
+                }
+                string customer = Scalar(conn, "SELECT TOP 1 CAST(SEQ_NO AS varchar(20)) FROM CUSTOMER_INFO WHERE NAME = @q", typed);
+                if (customer.Length == 0)
+                {
+                    return "";
+                }
+                customerKey = customer;
+                SqlCommand countCmd = new SqlCommand("SELECT COUNT(*) FROM JOB_DETAILS WHERE CUSTOMER_ID = @q AND STATUS = 1", conn);
+                countCmd.Parameters.Add("@q", SqlDbType.VarChar, 20).Value = customer;
+                int count = Convert.ToInt32(countCmd.ExecuteScalar());
+                if (count == 0)
+                {
+                    return "";
+                }
+                if (count == 1)
+                {
+                    return Scalar(conn, "SELECT TOP 1 JOB_NO FROM JOB_DETAILS WHERE CUSTOMER_ID = @q AND STATUS = 1 ORDER BY SEQ_NO DESC", customer);
+                }
+                conn.Dispose();
+                conn = null;
+                ShowPendingCredit(customer);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.ResolveJobNumber", ex);
+                return "";
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private static string SqlMoney(string column)
+        {
+            return "CASE WHEN ISNUMERIC(" + column + ") = 1 THEN CAST(" + column + " AS decimal(18,2)) ELSE 0 END";
+        }
+
+        private void LoadFoundJob(string jobNo)
+        {
+            txtNo.Text = jobNo;
+            FindEmps();
+            CUS();
+            SHOW();
+            ShowDetails();
+            ShowDetailsB();
+            StockShowDetails();
+        }
+
+        private void ShowPendingCredit(string customerId)
+        {
+            Form dialog = new Form();
+            dialog.Text = "Pending credit";
+            dialog.StartPosition = FormStartPosition.CenterParent;
+            dialog.Size = new Size(760, 420);
+            dialog.MinimizeBox = false;
+            DataGridView grid = new DataGridView();
+            grid.Dock = DockStyle.Fill;
+            grid.ReadOnly = true;
+            grid.AllowUserToAddRows = false;
+            grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            grid.AutoGenerateColumns = true;
+            Label empty = new Label();
+            empty.Text = "No unpaid invoices for this customer.";
+            empty.Dock = DockStyle.Top;
+            empty.Height = 28;
+            empty.Visible = false;
+            dialog.Controls.Add(grid);
+            dialog.Controls.Add(empty);
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                string paid = SqlMoney("j.ADVANCE_1") + " + " + SqlMoney("j.ADVANCE_2") + " + " + SqlMoney("j.ADVANCE_3");
+                string total = SqlMoney("j.TOT_COST_AMOUNT");
+                SqlDataAdapter adapter = new SqlDataAdapter("SELECT j.JOB_NO, j.INV_NO, CONVERT(varchar(10), j.JOB_START_DATE, 23) AS JOB_DATE, " + total + " AS TOTAL, " + paid + " AS PAID, " + total + " - (" + paid + ") AS BALANCE FROM JOB_DETAILS j WHERE j.CUSTOMER_ID = @seq AND j.STATUS = 1 AND " + total + " - (" + paid + ") > 0 ORDER BY j.SEQ_NO DESC", conn);
+                adapter.SelectCommand.Parameters.Add("@seq", SqlDbType.VarChar, 20).Value = customerId;
+                DataTable table = new DataTable();
+                adapter.Fill(table);
+                grid.DataSource = table;
+                if (grid.Columns.Count >= 6)
+                {
+                    grid.Columns[0].HeaderText = "Job No";
+                    grid.Columns[1].HeaderText = "Invoice No";
+                    grid.Columns[2].HeaderText = "Date";
+                    grid.Columns[3].HeaderText = "Total";
+                    grid.Columns[4].HeaderText = "Paid";
+                    grid.Columns[5].HeaderText = "Balance";
+                }
+                empty.Visible = table.Rows.Count == 0;
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.ShowPendingCredit", ex);
+                MessageBox.Show(ex.Message, "Pending credit");
+                return;
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+            grid.CellDoubleClick += delegate
+            {
+                if (grid.CurrentRow == null || grid.CurrentRow.Cells["JOB_NO"].Value == null)
+                {
+                    return;
+                }
+                string selected = grid.CurrentRow.Cells["JOB_NO"].Value.ToString();
+                dialog.Close();
+                LoadFoundJob(selected);
+            };
+            dialog.ShowDialog(this);
+        }
+
+        private void PlaceOperator()
+        {
+            if (operatorLabel == null)
+            {
+                operatorLabel = new Label();
+                operatorLabel.Name = "lblOperator";
+                operatorLabel.Text = "Assigned Employee / Operator";
+                operatorLabel.AutoSize = true;
+                operatorLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                this.Controls.Add(operatorLabel);
+            }
+            operatorLabel.Location = new Point(lblBalanceDue.Left, Math.Max(8, lblBalanceDue.Top - 78));
+            cmbEmp.Parent = this;
+            cmbEmp.Location = new Point(lblBalanceDue.Left, operatorLabel.Bottom + 4);
+            cmbEmp.Width = 280;
+            cmbEmp.Visible = true;
+            operatorLabel.Visible = true;
+            operatorLabel.BringToFront();
+            cmbEmp.BringToFront();
+            FindEmps();
+        }
+
+        private bool SettleExistingJob(bool announce)
+        {
+            if (SEQ == 0)
+            {
+                FindSEQ();
+            }
+            if (SEQ == 0)
+            {
+                MessageBox.Show("The saved job could not be found.", "Job Card");
+                return false;
+            }
+            decimal storedA = 0;
+            decimal storedB = 0;
+            decimal storedC = 0;
+            string invoiceNo = txtINVNO.Text.Trim();
+            SqlConnection read = null;
+            try
+            {
+                Connection.DatabaseConnection readLink = new Connection.DatabaseConnection();
+                read = readLink.Connect();
+                SqlCommand readCmd = new SqlCommand("SELECT ADVANCE_1, ADVANCE_2, ADVANCE_3, INV_NO FROM JOB_DETAILS WHERE SEQ_NO = @seq AND STATUS = 1", read);
+                readCmd.Parameters.Add("@seq", SqlDbType.Int).Value = SEQ;
+                SqlDataReader reader = readCmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    storedA = Money(reader["ADVANCE_1"].ToString());
+                    storedB = Money(reader["ADVANCE_2"].ToString());
+                    storedC = Money(reader["ADVANCE_3"].ToString());
+                    if (invoiceNo.Length == 0)
+                    {
+                        invoiceNo = reader["INV_NO"].ToString().Trim();
+                    }
+                }
+                reader.Close();
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.SettleExistingJob", ex);
+                MessageBox.Show(ex.Message, "Job Card");
+                return false;
+            }
+            finally
+            {
+                if (read != null)
+                {
+                    read.Dispose();
+                }
+            }
+            txtA.Text = storedA.ToString("0.00");
+            txtB.Text = storedB.ToString("0.00");
+            txtC.Text = storedC.ToString("0.00");
+            decimal stored = storedA + storedB + storedC;
+            decimal screen = Money(txtAdvance.Text);
+            decimal diff = screen - stored;
+            if (diff < 0)
+            {
+                if (blankAdvanceOnPrint)
+                {
+                    txtAdvance.Text = stored.ToString("0.00");
+                    diff = 0;
+                }
+                else
+                {
+                    MessageBox.Show("Enter the full paid amount, including earlier advances.", "Job Card");
+                    return false;
+                }
+            }
+            if (diff > 0)
+            {
+                string amountColumn = "";
+                string dateColumn = "";
+                if (Money(txtA.Text) == 0)
+                {
+                    amountColumn = "ADVANCE_1";
+                    dateColumn = "PAID_DATE1";
+                    txtA.Text = diff.ToString("0.00");
+                }
+                else if (Money(txtB.Text) == 0)
+                {
+                    amountColumn = "ADVANCE_2";
+                    dateColumn = "PAID_DATE2";
+                    txtB.Text = diff.ToString("0.00");
+                }
+                else if (Money(txtC.Text) == 0)
+                {
+                    amountColumn = "ADVANCE_3";
+                    dateColumn = "PAID_DATE3";
+                    txtC.Text = diff.ToString("0.00");
+                }
+                else
+                {
+                    MessageBox.Show("The three advance amounts are already filled.", "Job Card");
+                    return false;
+                }
+                string amountText = diff.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                string totalText = Money(lblTOTCOST.Text).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                string today = DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                SqlConnection conn = null;
+                try
+                {
+                    Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                    conn = link.Connect();
+                    SqlCommand update = new SqlCommand("UPDATE JOB_DETAILS SET " + amountColumn + " = '" + amountText + "', " + dateColumn + " = '" + today + "', TOT_COST_AMOUNT = '" + totalText + "' WHERE SEQ_NO = '" + SEQ + "'", conn);
+                    update.ExecuteNonQuery();
+                    PostTodaySale(conn, diff, invoiceNo);
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Write("frm_JobCreation.SettleExistingJob", ex);
+                    MessageBox.Show(ex.Message, "Job Card");
+                    return false;
+                }
+                finally
+                {
+                    if (conn != null)
+                    {
+                        conn.Dispose();
+                    }
+                }
+            }
+            RefreshBalance();
+            if (announce && diff > 0)
+            {
+                MessageBox.Show("Payment recorded. Balance is " + lblBalanceDue.Text + ".", "Job Card");
+            }
+            return true;
+        }
+
+        private void PostTodaySale(SqlConnection conn, decimal amount, string invoiceNo)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+            string amountText = amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            string today = DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            string remarks = ("Job " + txtNo.Text.Trim() + " Inv " + invoiceNo).Replace("'", "''");
+            SqlCommand insert = new SqlCommand("INSERT INTO DAY_EARNINGS (PRO_DATE, DESCRIPTION, AMOUNT, REMARKS) VALUES ('" + today + "', 'Today Sale', '" + amountText + "', '" + remarks + "')", conn);
+            insert.ExecuteNonQuery();
+        }
 
         private void txtNo_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -751,6 +2039,18 @@ namespace Billing_Inventory_Management_System
             int i = (int)c;
             if (i == 13)
             {
+                string typed = txtNo.Text.Trim();
+                string jobNo = ResolveJobNumber(typed);
+                if (jobNo == null)
+                {
+                    return;
+                }
+                if (jobNo.Length == 0)
+                {
+                    MessageBox.Show("No job was found for that job number, invoice number, or customer.", "Job Card");
+                    return;
+                }
+                txtNo.Text = jobNo;
                 FindEmps();
                 CUS();
                 SHOW();
@@ -772,28 +2072,312 @@ namespace Billing_Inventory_Management_System
 
         private void CUS()
         {
+            LoadCustomers();
+            lblCusName.Focus();
+        }
+
+        private void LoadCustomers()
+        {
             lblCusName.Items.Clear();
-
-            Connection.DatabaseConnection obyConn;
-
-            obyConn = new Connection.DatabaseConnection();
-            _Conn = obyConn.Connect();
-
-            SqlCommand cmdReader = new SqlCommand("SELECT NAME FROM CUSTOMER_INFO", _Conn);
-            SqlDataReader drReader = cmdReader.ExecuteReader();
-            while (drReader.Read())
+            AutoCompleteStringCollection source = new AutoCompleteStringCollection();
+            SqlConnection conn = null;
+            SqlDataReader drReader = null;
+            try
             {
-                lblCusName.Items.Add(drReader["NAME"].ToString()); // + " - " + drTenMain["NAME"].ToString());
-                lblCusName.Focus();
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                SqlCommand cmdReader = new SqlCommand("SELECT NAME, MOBILE_NO FROM CUSTOMER_INFO", conn);
+                drReader = cmdReader.ExecuteReader();
+                while (drReader.Read())
+                {
+                    string name = drReader["NAME"].ToString().Trim();
+                    string mobile = drReader["MOBILE_NO"].ToString().Trim();
+                    if (name != "")
+                    {
+                        lblCusName.Items.Add(name);
+                        source.Add(name);
+                    }
+                    if (mobile != "")
+                    {
+                        source.Add(mobile);
+                    }
+                }
+                lblCusName.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+                lblCusName.AutoCompleteSource = AutoCompleteSource.CustomSource;
+                lblCusName.AutoCompleteCustomSource = source;
             }
-            if (drReader.HasRows == false)
+            catch (Exception ex)
             {
-                //MessageBox.Show("Job has Not Created", "Creation Error..", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                ///return;
+                AppLog.Write("frm_JobCreation.LoadCustomers", ex);
             }
+            finally
+            {
+                if (drReader != null)
+                {
+                    drReader.Close();
+                }
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
 
-            drReader.Close();
-            _Conn.Close();
+        private void ResolveCustomer()
+        {
+            if (resolvingCustomer)
+            {
+                return;
+            }
+            string typed = lblCusName.Text.Trim();
+            if (typed == "")
+            {
+                if (lblCustomerContact != null)
+                {
+                    lblCustomerContact.Text = "";
+                }
+                return;
+            }
+            resolvingCustomer = true;
+            SqlConnection conn = null;
+            SqlDataReader drReader = null;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                SqlCommand cmdReader = new SqlCommand("SELECT SEQ_NO, NAME FROM CUSTOMER_INFO WHERE NAME = @q OR MOBILE_NO = @q", conn);
+                cmdReader.Parameters.Add("@q", SqlDbType.VarChar, 200).Value = typed;
+                drReader = cmdReader.ExecuteReader();
+                if (drReader.Read())
+                {
+                    string seq = drReader["SEQ_NO"].ToString();
+                    lblCusName.Text = drReader["NAME"].ToString();
+                    lblSEQ.Text = seq;
+                    customerKey = seq;
+                    ShowCustomerContact(seq);
+                    drReader.Close();
+                    drReader = null;
+                    conn.Dispose();
+                    conn = null;
+                    ShowUnpaidCredit(seq);
+                    dt_Start.Focus();
+                }
+                else if (lblCustomerContact != null)
+                {
+                    lblCustomerContact.Text = "";
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.ResolveCustomer", ex);
+            }
+            finally
+            {
+                resolvingCustomer = false;
+                if (drReader != null)
+                {
+                    drReader.Close();
+                }
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private void ShowUnpaidCredit(string seq)
+        {
+            lblBalQty.Text = "0.00";
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                SqlCommand cmd = new SqlCommand("SELECT ISNULL(SUM(t.CREDIT), 0) FROM ISSUED_TOTALS t INNER JOIN (SELECT INV_NO, MIN(CUSTOMER_ID) AS CUSTOMER_ID FROM JOB_DETAILS GROUP BY INV_NO) j ON j.INV_NO = t.INV_NO WHERE j.CUSTOMER_ID = @seq AND (t.PAID = 0 OR t.PAID IS NULL)", conn);
+                cmd.Parameters.Add("@seq", SqlDbType.VarChar, 50).Value = seq;
+                object value = cmd.ExecuteScalar();
+                decimal credit = 0;
+                if (value != null && value != DBNull.Value)
+                {
+                    decimal.TryParse(value.ToString(), out credit);
+                }
+                lblBalQty.Text = credit.ToString("0.00");
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.ShowUnpaidCredit", ex);
+                lblBalQty.Text = "0.00";
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private void RefreshJobCost(object sender, EventArgs e)
+        {
+            if (loadingJob)
+            {
+                return;
+            }
+            decimal qty = ReadAmount(txtQty.Text);
+            decimal price = ReadAmount(txtSPAMNT.Text);
+            lblTOTCOST.Text = (qty * price).ToString("0.00");
+            RefreshBalance();
+            RefreshStockLabel();
+        }
+
+        private void RefreshBalance()
+        {
+            decimal total;
+            decimal advance;
+            if (!decimal.TryParse(lblTOTCOST.Text, out total))
+            {
+                total = 0;
+            }
+            if (!decimal.TryParse(txtAdvance.Text, out advance))
+            {
+                advance = 0;
+            }
+            decimal balance = total - advance;
+            lblBalanceDue.Text = balance.ToString("0.00");
+            if (balance <= 0)
+            {
+                lblBalanceDue.ForeColor = Color.ForestGreen;
+            }
+            else
+            {
+                lblBalanceDue.ForeColor = Color.OrangeRed;
+            }
+        }
+
+        private void SaveInvoiceIdentity()
+        {
+            if (SEQ == 0)
+            {
+                throw new InvalidOperationException("The job was saved but its sequence number was not found.");
+            }
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                SqlCommand read = new SqlCommand("SELECT INV_NO FROM JOB_DETAILS WHERE SEQ_NO = '" + SEQ + "'", conn);
+                object current = read.ExecuteScalar();
+                string existing = current == null || current == DBNull.Value ? "" : current.ToString().Trim();
+                bool nonNumeric = false;
+                for (int i = 0; i < existing.Length; i++)
+                {
+                    if (!char.IsDigit(existing[i]))
+                    {
+                        nonNumeric = true;
+                        break;
+                    }
+                }
+                string today = DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                string clock = DateTime.Now.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+                string sql;
+                if (nonNumeric)
+                {
+                    sql = "UPDATE JOB_DETAILS SET INV_DATE = '" + today + "', INV_TIME = '" + clock + "' WHERE SEQ_NO = '" + SEQ + "'";
+                }
+                else
+                {
+                    SqlCommand next = new SqlCommand("SELECT ISNULL(MAX(CASE WHEN INV_NO NOT LIKE '%[^0-9]%' AND INV_NO <> '' THEN CAST(INV_NO AS int) END), 0) + 1 FROM JOB_DETAILS", conn);
+                    int number = Convert.ToInt32(next.ExecuteScalar());
+                    sql = "UPDATE JOB_DETAILS SET INV_NO = '" + number.ToString(System.Globalization.CultureInfo.InvariantCulture) + "', INV_DATE = '" + today + "', INV_TIME = '" + clock + "' WHERE SEQ_NO = '" + SEQ + "'";
+                    txtINVNO.Text = number.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                }
+                SqlCommand update = new SqlCommand(sql, conn);
+                update.ExecuteNonQuery();
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private void SaveJobLine()
+        {
+            if (SEQ == 0)
+            {
+                throw new InvalidOperationException("The job was saved but its sequence number was not found.");
+            }
+            decimal qty;
+            decimal price;
+            if (!decimal.TryParse(txtQty.Text, out qty))
+            {
+                qty = 0;
+            }
+            if (!decimal.TryParse(txtSPAMNT.Text, out price))
+            {
+                price = 0;
+            }
+            string jobType = cmbPartNO.Text.Trim();
+            if (jobType.Length == 0)
+            {
+                jobType = txtRemark.Text.Trim();
+            }
+            if (jobType.Length == 0)
+            {
+                jobType = "-";
+            }
+            jobType = jobType.Replace("'", "''");
+            string qtyText = qty.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            string totalText = (qty * price).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                SqlCommand cmd = new SqlCommand("INSERT INTO JOB_DESCRIPTION (SEQ_NO, JOB_TYPE, QTY, TOTAL, JOB_DATE) VALUES ('" + SEQ + "', '" + jobType + "', '" + qtyText + "', '" + totalText + "', '" + dt_Start.Value + "')", conn);
+                cmd.ExecuteNonQuery();
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private void SaveJobAmounts()
+        {
+            decimal total;
+            decimal advance;
+            if (!decimal.TryParse(lblTOTCOST.Text, out total))
+            {
+                total = 0;
+            }
+            if (!decimal.TryParse(txtAdvance.Text, out advance))
+            {
+                advance = 0;
+            }
+            string totalText = total.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            string advanceText = advance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            txtA.Text = advanceText;
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                SqlCommand cmd = new SqlCommand("UPDATE JOB_DETAILS SET TOT_COST_AMOUNT = '" + totalText + "', ADVANCE_1 = '" + advanceText + "' WHERE SEQ_NO = '" + SEQ + "'", conn);
+                cmd.ExecuteNonQuery();
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
         }
 
         private void TOTCOST()
@@ -831,12 +2415,15 @@ namespace Billing_Inventory_Management_System
             }
             drReader.Close();
             _Conn.Close();
+            ShowUnpaidCredit(CUS_ID.ToString());
         }
 
         private void SHOW()
         {
+            loadingJob = true;
+            try
+            {
             lblCusName.Focus();
-            lblCusName.DroppedDown = true;
             button2.Enabled = true;
 
             //button25.Enabled = false;
@@ -851,7 +2438,7 @@ namespace Billing_Inventory_Management_System
             SqlDataReader drReader = cmdReader.ExecuteReader();
             while (drReader.Read())
             {
-                button2.Enabled = false;
+                button2.Enabled = true;
                 btnPay.Enabled = true;
                 dt_Start.Focus();
                 tabControl1.Visible = true;
@@ -878,6 +2465,8 @@ namespace Billing_Inventory_Management_System
                     txtA.Text = drReader["ADVANCE_1"].ToString();
                     txtB.Text = drReader["ADVANCE_2"].ToString();
                     txtC.Text = drReader["ADVANCE_3"].ToString();
+                    txtAdvance.Text = (Money(txtA.Text) + Money(txtB.Text) + Money(txtC.Text)).ToString("0.00");
+                    customerKey = CUS_ID.ToString();
                     txtD.Text = drReader["ADVANCE_4"].ToString();
                     txtE.Text = drReader["ADVANCE_5"].ToString();
                     txtF.Text = drReader["ADVANCE_6"].ToString();
@@ -908,7 +2497,6 @@ namespace Billing_Inventory_Management_System
                 if (drReader.HasRows == false)
                 {
                     lblCusName.Focus();
-                    lblCusName.DroppedDown = true;
                 }
             }
 
@@ -916,6 +2504,27 @@ namespace Billing_Inventory_Management_System
 
             drReader.Close();
             _Conn.Close();
+            FillMaterialItems(true);
+            }
+            finally
+            {
+                loadingJob = false;
+                RefreshBalance();
+                if (cmbPartNO.Text.Trim().Length > 0)
+                {
+                    Load_BALQTYS_PARTNO();
+                    UOM();
+                    ShowLiveStock();
+                }
+                if (lblSEQ.Text.Trim().Length > 0)
+                {
+                    ShowCustomerContact(lblSEQ.Text);
+                }
+                if (SEQ != 0)
+                {
+                    PlaceOperator();
+                }
+            }
         }
 
         private void CLEARDATA()
@@ -933,6 +2542,7 @@ namespace Billing_Inventory_Management_System
             txtRemark.Text = "";
             cmbMethod.Text = "";
             lblTOTCOST.Text = "";
+            ApplyToday();
         }
 
         private void btn_Back_Click(object sender, EventArgs e)
@@ -1573,36 +3183,310 @@ namespace Billing_Inventory_Management_System
 
         }
 
+        private bool HasPrintableJob()
+        {
+            string jobNo = txtNo.Text.Trim().Replace("'", "''");
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection link = new Connection.DatabaseConnection();
+                conn = link.Connect();
+                SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM JOB_DETAILS j INNER JOIN JOB_DESCRIPTION d ON d.SEQ_NO = j.SEQ_NO INNER JOIN CUSTOMER_INFO c ON CAST(c.SEQ_NO AS varchar(20)) = j.CUSTOMER_ID WHERE j.JOB_NO = '" + jobNo + "'", conn);
+                return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private bool PrepareJobForPrint()
+        {
+            if (txtNo.Text.Trim().Length == 0)
+            {
+                MessageBox.Show("You have not assigned a Job. Assigne a Job & try again....", "Invalid Job", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return false;
+            }
+            ResolveCustomer();
+            if (HasPrintableJob())
+            {
+                return SettleExistingJob(false);
+            }
+            if (lblCusName.Text.Trim().Length == 0 || lblSEQ.Text.Trim().Length == 0)
+            {
+                MessageBox.Show("Please enter the customer, then print again.", "Invoice");
+                return false;
+            }
+            decimal stockQty;
+            decimal jobQty;
+            bool hasStock = decimal.TryParse(lbl_BalQty.Text, out stockQty);
+            bool hasQty = decimal.TryParse(txtQty.Text, out jobQty);
+            if (hasStock && hasQty && stockQty < jobQty)
+            {
+                MessageBox.Show("Quantity not Enough for the Job", "Received Goods Info");
+                return false;
+            }
+            bool saved = false;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                _Conn = obyConn.Connect();
+                SqlCommand cmdsql1 = new SqlCommand();
+                cmdsql1.Connection = _Conn;
+                cmdsql1.CommandText = "INSERT INTO JOB_DETAILS (JOB_DATE, JOB_TIME, JOB_NO, CUSTOMER_ID, JOB_START_DATE, JOB_END_DATE, P_SIZE, QTY, P_METHOD, P_MEDIA, P_CAT, REMARK) VALUES ('" + DateTime.Now + "', '" + DateTime.Now + "', '" + txtNo.Text + "', '" + lblSEQ.Text + "', '" + dt_Start.Value + "', '" + dt_End.Value + "', '" + cmbPartNO.Text + "', '" + txtQty.Text + "', '" + cmbMethod.Text + "', '" + cmbCat.Text + "', '" + cmbCat.Text + "', '" + txtRemark.Text.Replace("'", "''") + "')";
+                cmdsql1.ExecuteNonQuery();
+                FindSEQ();
+                SaveJobAmounts();
+                SaveJobLine();
+                SaveInvoiceIdentity();
+                FindEmps();
+                ShowDetails();
+                ShowDetailsB();
+                StockShowDetails();
+                saved = true;
+                draftSaved = true;
+                DeleteJobDraft();
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.PrepareJobForPrint", ex);
+                MessageBox.Show(ex.Message, "Invoice");
+            }
+            finally
+            {
+                if (_Conn != null)
+                {
+                    _Conn.Dispose();
+                    _Conn = null;
+                }
+            }
+            return saved;
+        }
+
         private void btnPrint_Click(object sender, EventArgs e)
         {
             UP_STS();
             UP_EMPS();
 
-            if (txtNo.Text == "")
+            if (!PrepareJobForPrint())
             {
-                MessageBox.Show("You have not assigned a Job. Assigne a Job & try again....", "Invalid Job", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
             }
-            else
-            {
-                strCriteria = "Reports";
+            strCriteria = "Reports";
 
-                this.Text = "Report Criteria for " + strCriteria;
+            this.Text = "Report Criteria for " + strCriteria;
 
-                strReportName = "rpt_JobDetails";
+            strReportName = "rpt_JobDetails";
 
-                frm_Reports frm_Reports = new frm_Reports();
-                CommonProfiles objComPro = new CommonProfiles();
+            frm_Reports frm_Reports = new frm_Reports();
+            CommonProfiles objComPro = new CommonProfiles();
 
-                frm_Reports.GetReportCriteriaA(strReportName, strCriteria, txtNo.Text, SEQ);
-                //frm_Reports.GetReportCriteria(strReportName, strCriteria, DateTime.Parse(lblDate.Text), DateTime.Parse(lblDate.Text), txtNo.Text);
-                frm_Reports.Show();
-            }
+            frm_Reports.GetReportCriteriaA(strReportName, strCriteria, txtNo.Text, SEQ);
+            frm_Reports.Show();
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            txtNo.Focus();
             timer1.Enabled = false;
+            txtNo.Focus();
+            OfferJobDraft();
+        }
+
+        private static string JobDraftPath()
+        {
+            return Path.Combine(Application.StartupPath, "Drafts", "job-card.draft");
+        }
+
+        private void OfferJobDraft()
+        {
+            if (draftReady)
+            {
+                return;
+            }
+            if (string.IsNullOrEmpty(VVehicleNO) && File.Exists(JobDraftPath()))
+            {
+                DialogResult answer = MessageBox.Show("An unsaved job card draft was found. Would you like to restore it?", "Job card", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (answer == DialogResult.Yes)
+                {
+                    RestoreJobDraft(JobDraftPath());
+                }
+            }
+            BeginJobDraft();
+        }
+
+        private void BeginJobDraft()
+        {
+            draftReady = true;
+            draftDirty = false;
+            txtNo.TextChanged += MarkJobDraft;
+            lblCusName.TextChanged += MarkJobDraft;
+            lblSEQ.TextChanged += MarkJobDraft;
+            dt_Start.ValueChanged += MarkJobDraft;
+            dt_End.ValueChanged += MarkJobDraft;
+            cmbMethod.TextChanged += MarkJobDraft;
+            cmbCat.TextChanged += MarkJobDraft;
+            cmbPartNO.TextChanged += MarkJobDraft;
+            txtQty.TextChanged += MarkJobDraft;
+            txtSPAMNT.TextChanged += MarkJobDraft;
+            txtRemark.TextChanged += MarkJobDraft;
+            txtAdvance.TextChanged += MarkJobDraft;
+            this.Deactivate += JobDraftLeave;
+            this.FormClosing += JobDraftClosing;
+            draftTimer = new System.Windows.Forms.Timer();
+            draftTimer.Interval = 3000;
+            draftTimer.Tick += JobDraftTick;
+            draftTimer.Start();
+        }
+
+        private void MarkJobDraft(object sender, EventArgs e)
+        {
+            if (draftReady && !draftSaved)
+            {
+                draftDirty = true;
+            }
+        }
+
+        private void JobDraftTick(object sender, EventArgs e)
+        {
+            WriteJobDraft();
+        }
+
+        private void JobDraftLeave(object sender, EventArgs e)
+        {
+            WriteJobDraft();
+        }
+
+        private void JobDraftClosing(object sender, FormClosingEventArgs e)
+        {
+            WriteJobDraft();
+        }
+
+        private void WriteJobDraft()
+        {
+            if (!draftReady || !draftDirty || draftSaved)
+            {
+                return;
+            }
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(Application.StartupPath, "Drafts"));
+                string[] lines = new string[]
+                {
+                    "JobNo=" + EscapeDraft(txtNo.Text),
+                    "Customer=" + EscapeDraft(lblCusName.Text),
+                    "Seq=" + EscapeDraft(lblSEQ.Text),
+                    "Start=" + dt_Start.Value.ToString("yyyy-MM-dd"),
+                    "End=" + dt_End.Value.ToString("yyyy-MM-dd"),
+                    "Method=" + EscapeDraft(cmbMethod.Text),
+                    "Category=" + EscapeDraft(cmbCat.Text),
+                    "Part=" + EscapeDraft(cmbPartNO.Text),
+                    "Qty=" + EscapeDraft(txtQty.Text),
+                    "UnitPrice=" + EscapeDraft(txtSPAMNT.Text),
+                    "Advance=" + EscapeDraft(txtAdvance.Text),
+                    "Remark=" + EscapeDraft(txtRemark.Text)
+                };
+                File.WriteAllLines(JobDraftPath(), lines);
+                draftDirty = false;
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.Draft", ex);
+            }
+        }
+
+        private void RestoreJobDraft(string path)
+        {
+            try
+            {
+                Dictionary<string, string> map = new Dictionary<string, string>();
+                string[] lines = File.ReadAllLines(path);
+                foreach (string line in lines)
+                {
+                    int split = line.IndexOf('=');
+                    if (split <= 0)
+                    {
+                        continue;
+                    }
+                    map[line.Substring(0, split)] = UnescapeDraft(line.Substring(split + 1));
+                }
+                loadingJob = true;
+                txtNo.Text = DraftValue(map, "JobNo");
+                lblCusName.Text = DraftValue(map, "Customer");
+                lblSEQ.Text = DraftValue(map, "Seq");
+                cmbMethod.Text = DraftValue(map, "Method");
+                cmbCat.Text = DraftValue(map, "Category");
+                cmbPartNO.Text = DraftValue(map, "Part");
+                txtQty.Text = DraftValue(map, "Qty");
+                txtSPAMNT.Text = DraftValue(map, "UnitPrice");
+                txtRemark.Text = DraftValue(map, "Remark");
+                txtAdvance.Text = DraftValue(map, "Advance");
+                DateTime start;
+                if (DateTime.TryParse(DraftValue(map, "Start"), out start))
+                {
+                    dt_Start.Value = start;
+                }
+                DateTime end;
+                if (DateTime.TryParse(DraftValue(map, "End"), out end))
+                {
+                    dt_End.Value = end;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.Draft", ex);
+            }
+            finally
+            {
+                loadingJob = false;
+                RefreshBalance();
+            }
+        }
+
+        private static string DraftValue(Dictionary<string, string> map, string key)
+        {
+            string value;
+            if (map.TryGetValue(key, out value))
+            {
+                return value;
+            }
+            return "";
+        }
+
+        private static string EscapeDraft(string value)
+        {
+            if (value == null)
+            {
+                return "";
+            }
+            return value.Replace("\\", "\\\\").Replace("\r", "").Replace("\n", "\\n");
+        }
+
+        private static string UnescapeDraft(string value)
+        {
+            if (value == null)
+            {
+                return "";
+            }
+            return value.Replace("\\n", "\n").Replace("\\\\", "\\");
+        }
+
+        private void DeleteJobDraft()
+        {
+            try
+            {
+                string path = JobDraftPath();
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.Draft", ex);
+            }
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -1620,7 +3504,6 @@ namespace Billing_Inventory_Management_System
             if (i == 13)
             {
                 cmbMethod.Focus();
-                cmbMethod.DroppedDown = true;
 
             }
         }
@@ -1715,7 +3598,6 @@ namespace Billing_Inventory_Management_System
 
         private void cmbEmp_Enter(object sender, EventArgs e)
         {
-            cmbEmp.DroppedDown = true;
         }
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
@@ -2348,7 +4230,6 @@ namespace Billing_Inventory_Management_System
             if (i == 13)
             {
                 cmbMedia.Focus();
-                cmbMedia.DroppedDown = true;
             }
         }
 
@@ -2359,7 +4240,6 @@ namespace Billing_Inventory_Management_System
             if (i == 13)
             {
                 cmbCat.Focus();
-                cmbCat.DroppedDown = true;
             }
         }
 
@@ -2370,7 +4250,6 @@ namespace Billing_Inventory_Management_System
             if (i == 13)
             {
                 cmbPartNO.Focus();
-                cmbPartNO.DroppedDown = true;
             }
         }
 
@@ -2487,7 +4366,6 @@ namespace Billing_Inventory_Management_System
             {
                 MessageBox.Show("Please Enter Required Data and Proceed", "Received Goods Info");
                 txtSpare.Focus();
-                txtSpare.DroppedDown = true;
                 return;
             }
 
@@ -2604,51 +4482,13 @@ namespace Billing_Inventory_Management_System
             int i = (int)c;
             if (i == 13)
             {
-                Connection.DatabaseConnection obyConn;
-
-                obyConn = new Connection.DatabaseConnection();
-                _Conn = obyConn.Connect();
-
-                SqlCommand cmdReader = new SqlCommand("SELECT SEQ_NO FROM CUSTOMER_INFO WHERE NAME = '" + lblCusName.Text + "'", _Conn);
-                SqlDataReader drReader = cmdReader.ExecuteReader();
-                while (drReader.Read())
-                {
-                    lblSEQ.Text = drReader["SEQ_NO"].ToString(); // + " - " + drTenMain["NAME"].ToString());
-                    dt_Start.Focus();
-                }
-                if (drReader.HasRows == false)
-                {
-                    //MessageBox.Show("Job has Not Created", "Creation Error..", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    ///return;
-                }
-
-                drReader.Close();
-                _Conn.Close();
+                ResolveCustomer();
             }
         }
 
         private void lblCusName_Leave(object sender, EventArgs e)
         {
-            Connection.DatabaseConnection obyConn;
-
-            obyConn = new Connection.DatabaseConnection();
-            _Conn = obyConn.Connect();
-
-            SqlCommand cmdReader = new SqlCommand("SELECT SEQ_NO FROM CUSTOMER_INFO WHERE NAME = '" + lblCusName.Text + "'", _Conn);
-            SqlDataReader drReader = cmdReader.ExecuteReader();
-            while (drReader.Read())
-            {
-                lblSEQ.Text = drReader["SEQ_NO"].ToString(); // + " - " + drTenMain["NAME"].ToString());
-                dt_Start.Focus();
-            }
-            if (drReader.HasRows == false)
-            {
-                //MessageBox.Show("Job has Not Created", "Creation Error..", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                ///return;
-            }
-
-            drReader.Close();
-            _Conn.Close();
+            ResolveCustomer();
         }
 
         private void cmbPartNO_KeyPress(object sender, KeyPressEventArgs e)
@@ -2663,21 +4503,38 @@ namespace Billing_Inventory_Management_System
 
         private void Load_BALQTYS_PARTNO()
         {
-            lblBalQty.Text = "";
-            Connection.DatabaseConnection obyConn;
-            obyConn = new Connection.DatabaseConnection();
-            _Conn = obyConn.Connect();
-            SqlCommand cmdsql = new SqlCommand();
-            cmdsql.Connection = _Conn;
-            cmdsql.CommandText = "SELECT S_NO, SUM(BAL_QTY) AS QTY, STATUS FROM RECEIVED_ITEMS GROUP BY S_NO, STATUS, PARTNO HAVING (STATUS = 1) AND (PARTNO  = '" + cmbPartNO.Text + "')";
-            SqlDataReader dreader = cmdsql.ExecuteReader();
-            while (dreader.Read())
+            lblBalQty.Text = "0.00";
+            if (cmbPartNO.Text.Trim().Length == 0)
             {
-                lblBalQty.Text = dreader["QTY"].ToString();
+                return;
             }
-            cmdsql.Dispose();
-            dreader.Dispose();
-            _Conn.Close();
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                SqlCommand cmdsql = new SqlCommand("SELECT ISNULL(SUM(CASE WHEN ISNUMERIC(r.BAL_QTY) = 1 THEN CAST(r.BAL_QTY AS decimal(18,2)) ELSE 0 END), 0) FROM RECEIVED_ITEMS r WHERE r.STATUS = 1 AND (r.PARTNO = @item OR EXISTS (SELECT 1 FROM MASTER m WHERE m.PARTNO = r.PARTNO AND m.DESCRIPTION = @item))", conn);
+                cmdsql.Parameters.Add("@item", SqlDbType.VarChar, 100).Value = cmbPartNO.Text.Trim();
+                object value = cmdsql.ExecuteScalar();
+                decimal qty = 0;
+                if (value != null && value != DBNull.Value)
+                {
+                    decimal.TryParse(value.ToString(), out qty);
+                }
+                lblBalQty.Text = qty.ToString("0.00");
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.Load_BALQTYS_PARTNO", ex);
+                lblBalQty.Text = "0.00";
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
         }
 
         private void UOM()
@@ -2688,7 +4545,8 @@ namespace Billing_Inventory_Management_System
             _Conn = obyConn.Connect();
             SqlCommand cmdsql = new SqlCommand();
             cmdsql.Connection = _Conn;
-            cmdsql.CommandText = "SELECT UOM FROM MASTER WHERE (PARTNO  = '" + cmbPartNO.Text + "')";
+            cmdsql.CommandText = "SELECT TOP 1 UOM FROM MASTER WHERE PARTNO = @item OR DESCRIPTION = @item";
+            cmdsql.Parameters.Add("@item", SqlDbType.VarChar, 100).Value = cmbPartNO.Text.Trim();
             SqlDataReader dreader = cmdsql.ExecuteReader();
             while (dreader.Read())
             {
@@ -2701,8 +4559,99 @@ namespace Billing_Inventory_Management_System
 
         private void cmbPartNO_SelectedValueChanged(object sender, EventArgs e)
         {
+            if (loadingJob || fillingCatalog)
+            {
+                return;
+            }
             Load_BALQTYS_PARTNO();
             UOM();
+            ShowLiveStock();
+        }
+
+        private void ShowLiveStock()
+        {
+            availableStock = 0;
+            stockKnown = false;
+            if (cmbPartNO.Text.Trim().Length == 0)
+            {
+                RefreshStockLabel();
+                return;
+            }
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                SqlCommand cmdsql = new SqlCommand("SELECT ISNULL(SUM(CASE WHEN ISNUMERIC(r.BAL_QTY) = 1 THEN CAST(r.BAL_QTY AS decimal(18,2)) ELSE 0 END), 0) FROM RECEIVED_ITEMS r WHERE r.STATUS = 1 AND (r.PARTNO = @item OR EXISTS (SELECT 1 FROM MASTER m WHERE m.PARTNO = r.PARTNO AND m.DESCRIPTION = @item))", conn);
+                cmdsql.Parameters.Add("@item", SqlDbType.VarChar, 100).Value = cmbPartNO.Text.Trim();
+                object value = cmdsql.ExecuteScalar();
+                if (value != null && value != DBNull.Value)
+                {
+                    decimal.TryParse(value.ToString(), out availableStock);
+                }
+                stockKnown = true;
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.ShowLiveStock", ex);
+                stockKnown = false;
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+            RefreshStockLabel();
+        }
+
+        private void RefreshStockLabel()
+        {
+            if (lblStockHint == null)
+            {
+                return;
+            }
+            if (!stockKnown)
+            {
+                lblStockHint.Text = "";
+                return;
+            }
+            decimal jobQty;
+            if (!decimal.TryParse(txtQty.Text, out jobQty))
+            {
+                jobQty = 0;
+            }
+            string count = decimal.Truncate(availableStock).ToString("0");
+            if (jobQty > availableStock)
+            {
+                lblStockHint.ForeColor = Color.Red;
+                lblStockHint.Text = "Insufficient Stock! Available: " + count + " Nos";
+            }
+            else
+            {
+                lblStockHint.ForeColor = Color.ForestGreen;
+                lblStockHint.Text = "In Stock: " + count + " Nos";
+            }
+        }
+
+        private bool StockAllowsSale()
+        {
+            decimal jobQty;
+            if (!decimal.TryParse(txtQty.Text, out jobQty))
+            {
+                return true;
+            }
+            if (!stockKnown)
+            {
+                ShowLiveStock();
+            }
+            if (stockKnown && jobQty > availableStock)
+            {
+                MessageBox.Show("There is not enough stock for this quantity. Available: " + decimal.Truncate(availableStock).ToString("0") + " Nos.", "Job Card");
+                return false;
+            }
+            return true;
         }
 
         private void button13_Click_1(object sender, EventArgs e)
@@ -2782,24 +4731,32 @@ namespace Billing_Inventory_Management_System
 
         private void button20_Click_1(object sender, EventArgs e)
         {
-            if (txtNo.Text == "")
+            DefaultBlankAdvance();
+            if (!PrepareJobForPrint())
             {
-                MessageBox.Show("You have not assigned a Job. Assigne a Job & try again....", "Invalid Job", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                blankAdvanceOnPrint = false;
+                return;
             }
-            else
+            blankAdvanceOnPrint = false;
+            strCriteria = "Reports";
+
+            this.Text = "Report Criteria for " + strCriteria;
+
+            strReportName = "rpt_Invoice";
+
+            frm_Reports frm_Reports = new frm_Reports();
+            CommonProfiles objComPro = new CommonProfiles();
+
+            try
             {
-                strCriteria = "Reports";
-
-                this.Text = "Report Criteria for " + strCriteria;
-
-                strReportName = "rpt_Invoice";
-
-                frm_Reports frm_Reports = new frm_Reports();
-                CommonProfiles objComPro = new CommonProfiles();
-
                 frm_Reports.GetReportCriteriaA(strReportName, strCriteria, txtNo.Text, SEQ);
-                //frm_Reports.GetReportCriteria(strReportName, strCriteria, DateTime.Parse(lblDate.Text), DateTime.Parse(lblDate.Text), txtNo.Text);
                 frm_Reports.Show();
+                frm_Reports.Activate();
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_JobCreation.PrintInvoice", ex);
+                MessageBox.Show(ex.Message, "Invoice");
             }
         }
 
@@ -2812,6 +4769,10 @@ namespace Billing_Inventory_Management_System
         {
             lblCusName.ResetText();
             lblSEQ.Text = "";
+            if (lblCustomerContact != null)
+            {
+                lblCustomerContact.Text = "";
+            }
             cmbMethod.ResetText();
             cmbCat.ResetText();
             cmbCat.ResetText();
@@ -2819,6 +4780,65 @@ namespace Billing_Inventory_Management_System
             txtQty.Text = "";
             txtRemark.Text = "";
             tabControl1.Visible = false;
+            ApplyToday();
+        }
+
+        private void ApplyToday()
+        {
+            dt_Start.Value = DateTime.Today;
+            dt_End.Value = DateTime.Today.AddDays(3);
+        }
+
+        private void FitJobCard(object sender, EventArgs e)
+        {
+            this.Shown -= FitJobCard;
+            tabControl1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+            Grid_A.Dock = DockStyle.Fill;
+            dataGridView1.Dock = DockStyle.Fill;
+            dataGridView2.Dock = DockStyle.Fill;
+            btn_Delete.BringToFront();
+            tb1.BringToFront();
+            LayoutJobCard();
+            PlacePaymentControls();
+            this.MinimumSize = new Size(1180, 760);
+            AnchorRightEdge(this);
+            if (jobSideActions != null)
+            {
+                jobSideActions.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+                jobSideActions.BringToFront();
+            }
+        }
+
+        private void FitWidth(Control control)
+        {
+            int room = control.Parent.ClientSize.Width - control.Left - 16;
+            if (room > 180 && room < control.Width)
+            {
+                control.Width = room;
+            }
+        }
+
+        private void AnchorRightEdge(Control parent)
+        {
+            foreach (Control control in parent.Controls)
+            {
+                if (control.Name == "actionBar")
+                {
+                    continue;
+                }
+                if (control == lblCusName || control == txtRemark || control == tabControl1)
+                {
+                    continue;
+                }
+                if (control.Left >= 900 && control.Dock == DockStyle.None && control.Right <= control.Parent.ClientSize.Width)
+                {
+                    control.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+                }
+                if (control.HasChildren && !(control is DataGridView))
+                {
+                    AnchorRightEdge(control);
+                }
+            }
         }
 
         private void txtINVNO_KeyPress(object sender, KeyPressEventArgs e)
@@ -2838,25 +4858,20 @@ namespace Billing_Inventory_Management_System
 
         private void button21_Click_1(object sender, EventArgs e)
         {
-            if (txtNo.Text == "")
+            if (customerKey.Length == 0)
             {
-                MessageBox.Show("You have not assigned a Job. Assigne a Job & try again....", "Invalid Job", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ResolveCustomer();
             }
-            else
+            if (customerKey.Length == 0 && CUS_ID > 0)
             {
-                strCriteria = "Reports";
-
-                this.Text = "Report Criteria for " + strCriteria;
-
-                strReportName = "rpt_JobCredit";
-
-                frm_Reports frm_Reports = new frm_Reports();
-                CommonProfiles objComPro = new CommonProfiles();
-
-                frm_Reports.GetReportCriteriaA(strReportName, strCriteria, txtNo.Text, SEQ);
-                //frm_Reports.GetReportCriteria(strReportName, strCriteria, DateTime.Parse(lblDate.Text), DateTime.Parse(lblDate.Text), txtNo.Text);
-                frm_Reports.Show();
+                customerKey = CUS_ID.ToString();
             }
+            if (customerKey.Length == 0)
+            {
+                MessageBox.Show("Please enter the customer, then try again.", "Pending credit");
+                return;
+            }
+            ShowPendingCredit(customerKey);
         }
 
         private void cmbMethod_SelectedValueChanged(object sender, EventArgs e)
@@ -2876,48 +4891,6 @@ namespace Billing_Inventory_Management_System
             }
 
             drReader.Close();
-            _Conn.Close();
-            //SHOW = "SELECT SEQNO, CATEGORY, MAKE, PARTNO, PART, DESCRIPTION, UOM, ROL, ROQ, LOC, CAB, RACK, BIN, SPNO, DEL, BARNO FROM MASTER WHERE (CATEGORY = '" + cmbMethod.Text + "')ORDER BY SEQNO";
-            //ShowDetails();
-        }
-
-        private void cmbMedia_SelectedValueChanged(object sender, EventArgs e)
-        {
-            cmbCat.Items.Clear();
-            Connection.DatabaseConnection obyConn;
-            obyConn = new Connection.DatabaseConnection();
-            _Conn = obyConn.Connect();
-            SqlCommand cmdsql = new SqlCommand();
-            cmdsql.Connection = _Conn;
-            cmdsql.CommandText = "SELECT SUB_CAT FROM SUB_CATEGORY WHERE CATEGORY = '" + cmbMethod.Text + "' AND MAKE = '" + cmbCat.Text + "'";
-            SqlDataReader dreader = cmdsql.ExecuteReader();
-            while (dreader.Read())
-            {
-                cmbCat.Items.Add(dreader["SUB_CAT"].ToString());
-            }
-            cmdsql.Dispose();
-            dreader.Dispose();
-            _Conn.Close();
-            //SHOW = "SELECT SEQNO, CATEGORY, MAKE, PARTNO, PART, DESCRIPTION, UOM, ROL, ROQ, LOC, CAB, RACK, BIN, SPNO, DEL, BARNO FROM MASTER WHERE (CATEGORY = '" + cmbMethod.Text + "')ORDER BY SEQNO";
-            //ShowDetails();
-        }
-
-        private void cmbCat_SelectedValueChanged(object sender, EventArgs e)
-        {
-            cmbPartNO.Items.Clear();
-            Connection.DatabaseConnection obyConn;
-            obyConn = new Connection.DatabaseConnection();
-            _Conn = obyConn.Connect();
-            SqlCommand cmdsql = new SqlCommand();
-            cmdsql.Connection = _Conn;
-            cmdsql.CommandText = "SELECT SUB_CATEGORY FROM SUB_CATEGORY WHERE CATEGORY = '" + cmbMethod.Text + "' AND MAKE = '" + cmbCat.Text + "' AND SUB_CAT = '" + cmbCat.Text + "'";
-            SqlDataReader dreader = cmdsql.ExecuteReader();
-            while (dreader.Read())
-            {
-                cmbPartNO.Items.Add(dreader["SUB_CATEGORY"].ToString());
-            }
-            cmdsql.Dispose();
-            dreader.Dispose();
             _Conn.Close();
             //SHOW = "SELECT SEQNO, CATEGORY, MAKE, PARTNO, PART, DESCRIPTION, UOM, ROL, ROQ, LOC, CAB, RACK, BIN, SPNO, DEL, BARNO FROM MASTER WHERE (CATEGORY = '" + cmbMethod.Text + "')ORDER BY SEQNO";
             //ShowDetails();
@@ -2966,14 +4939,12 @@ namespace Billing_Inventory_Management_System
         {
             FINDMEDIA();
             cmbMedia.Enabled = true;
-            cmbMedia.DroppedDown = true;
         }
 
         private void txtNo_Leave(object sender, EventArgs e)
         {
             FINDMETHOD();
             cmbMethod.Enabled = true;
-            cmbMethod.DroppedDown = true;
         }
 
         private void cmbMedia_Leave(object sender, EventArgs e)
@@ -2998,7 +4969,6 @@ namespace Billing_Inventory_Management_System
             if (i == 13)
             {
                 cmbCat.Focus();
-                cmbCat.DroppedDown = true;
             }
         }
 
@@ -3009,13 +4979,16 @@ namespace Billing_Inventory_Management_System
             if (i == 13)
             {
                 cmbPartNO.Focus();
-                cmbPartNO.DroppedDown = true;
             }
         }
 
         private void cmbCat_SelectedValueChanged_1(object sender, EventArgs e)
         {
-            FINDParts();
+            if (fillingCatalog)
+            {
+                return;
+            }
+            FillMaterialItems(loadingJob);
         }
 
         private void FINDParts()

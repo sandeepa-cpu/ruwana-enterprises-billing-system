@@ -280,9 +280,11 @@ namespace Billing_Inventory_Management_System
 
         private void frm_ReturnCustomers_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             Find_Customer();
             Load_Data();
             PRO_DATE();
+            timer1.Enabled = true;
         }
 
         private void PRO_DATE()
@@ -577,9 +579,13 @@ namespace Billing_Inventory_Management_System
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            timer1.Enabled = false;
+            if (!this.Visible)
+            {
+                return;
+            }
             cmbCus.Focus();
             cmbCus.DroppedDown = true;
-            timer1.Enabled = false;
         }
 
         private void button1_Click(object sender, EventArgs e)

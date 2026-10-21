@@ -1,7 +1,12 @@
 bin/
 obj/
+.vs/
+*.sln.cache
 *.user
 *.suo
+*.mdf
+*.ldf
+Configuration.xml
 Backup DB/bin/
 Backup DB/obj/
 Logs/

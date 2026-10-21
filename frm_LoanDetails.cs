@@ -41,6 +41,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_LoanDetails_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             Loan_Details();
             Find_Employees();
             cmb_Loan_ID.Focus();

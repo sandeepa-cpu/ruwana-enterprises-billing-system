@@ -81,6 +81,7 @@ namespace Billing_Inventory_Management_System
                     cmdsql.Connection = _Conn;
                     cmdsql.CommandText = "INSERT INTO SUPPLIER_INFO (TITLE, NAME, ADDRESS, T_NO, F_NO, EMAIL, FILE_NO, USER_ACTION) VALUES ('" + txt_Title.Text + "', '" + txt_Initials.Text + "', '" + txt_Address.Text + "', '" + txt_Resident.Text + "', '" + txt_Mobile.Text + "', '" + txtEmail.Text + "', '" + txt_FileNo.Text + "', '1')";
                     cmdsql.ExecuteNonQuery();
+                    AuditLog.Write("EDIT", "frm_SupplierProfile", txt_Initials.Text);
                     MessageBox.Show("New Supplier Successfully Added");
                     ShowDetailsModel();
                 }
@@ -124,6 +125,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_SupplierProfile_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             FormActions.Standardize(this);
             ShowDetailsModel();
             txt_Title.Focus();

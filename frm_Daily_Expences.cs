@@ -19,8 +19,26 @@ namespace Billing_Inventory_Management_System
         private string strReportName = "";
         private SqlConnection _Conn;
 
+        private ComboBox cmbCategory;
+
         private void frm_Daily_Expences_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
+            frm_Accounts.EnsureCategory(null);
+            cmbCategory = new ComboBox();
+            cmbCategory.Name = "cmbCategory";
+            cmbCategory.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbCategory.Items.Add("Operation");
+            cmbCategory.Items.Add("Utility");
+            cmbCategory.Items.Add("Wastage");
+            cmbCategory.Location = new Point(400, 51);
+            cmbCategory.Width = 180;
+            Label categoryLabel = new Label();
+            categoryLabel.Text = "Category";
+            categoryLabel.AutoSize = true;
+            categoryLabel.Location = new Point(400, 28);
+            this.Controls.Add(categoryLabel);
+            this.Controls.Add(cmbCategory);
             
             Exp();
             PRO_DATE();
@@ -198,7 +216,7 @@ namespace Billing_Inventory_Management_System
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (cmb_Exp.Text == "" || txtAmount.Text == "")
+            if (cmb_Exp.Text == "" || txtAmount.Text == "" || cmbCategory.SelectedIndex < 0)
             {
                 MessageBox.Show("Please Enter Required Data and Proceed", "Expences Info");
                 return;
@@ -208,9 +226,10 @@ namespace Billing_Inventory_Management_System
 
             obyConn = new Connection.DatabaseConnection();
             _Conn = obyConn.Connect();
+            frm_Accounts.EnsureCategory(_Conn);
             SqlCommand cmdsql1 = new SqlCommand();
             cmdsql1.Connection = _Conn;
-            cmdsql1.CommandText = "INSERT INTO DAY_EXPENCES (PRO_DATE, DESCRIPTION, AMOUNT, REMARKS) VALUES ('" + dt_Start.Value + "', '" + cmb_Exp.Text + "', '" + txtAmount.Text + "', '" + txtRemark.Text + "')";
+            cmdsql1.CommandText = "INSERT INTO DAY_EXPENCES (PRO_DATE, DESCRIPTION, AMOUNT, REMARKS, CATEGORY) VALUES ('" + dt_Start.Value + "', '" + cmb_Exp.Text.Replace("'", "''") + "', '" + txtAmount.Text.Replace("'", "''") + "', '" + txtRemark.Text.Replace("'", "''") + "', '" + cmbCategory.Text.Replace("'", "''") + "')";
             cmdsql1.ExecuteNonQuery();
 
             MessageBox.Show("Job Entry Successfully Added. Proceed to the Next step");

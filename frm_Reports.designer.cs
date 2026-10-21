@@ -80,7 +80,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Pink;
             this.ClientSize = new System.Drawing.Size(1274, 1028);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.btn_Quit);
             this.Controls.Add(this.label58);
             this.Controls.Add(this.crystalReportViewer1);

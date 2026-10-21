@@ -50,6 +50,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_PayCategories_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             Connection.DatabaseConnection obyConn;
 
             obyConn = new Connection.DatabaseConnection();

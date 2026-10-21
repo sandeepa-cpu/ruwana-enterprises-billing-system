@@ -110,6 +110,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_JobType_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             ShowDetails();
             PRO_DATE();
             EMPNAME();

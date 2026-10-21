@@ -21,6 +21,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_Overtime_Period_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             TenNos();
             cmb_Ten_No.Focus();
         }

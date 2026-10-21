@@ -162,6 +162,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_OT_Rates_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             rb_Office.Focus();
             rb_Office.Checked = true;
 

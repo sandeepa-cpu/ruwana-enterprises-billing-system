@@ -161,6 +161,7 @@ namespace Billing_Inventory_Management_System
 
             crdReportDocument.Load(Application.StartupPath + "\\" + strReportName + ".rpt");
             crdReportDocument.Refresh();
+            ApplyBrand(crdReportDocument);
 
             CommonProfiles objComPro = new CommonProfiles();
             frm_ReportCriteria_Inventory objRepCriteria = new frm_ReportCriteria_Inventory();
@@ -180,6 +181,7 @@ namespace Billing_Inventory_Management_System
                     break;
                 case "rpt_Invoice":
                     crdReportDocument.SetParameterValue("VNO", strVNO);
+                    crdReportDocument.SetParameterValue("CASHIER", GetCurrentCashier());
                     ParExist = false;
                     break;
             }
@@ -203,9 +205,71 @@ namespace Billing_Inventory_Management_System
             //      if (strReportName == "EPF_Monthly_Report")// Added on 13-Apr-2011 - to Pause print ETF and brought forward to next month
             //      {
             //          objRepCriteria.HandleETFReport("Ded", intYear, objComPro.GetMonthConverted(strMonth));
-            //      }
+            //                  }
         }
 
+        private static void ApplyBrand(ReportDocument report)
+        {
+            if (report == null)
+            {
+                return;
+            }
+            foreach (Section section in report.ReportDefinition.Sections)
+            {
+                foreach (ReportObject item in section.ReportObjects)
+                {
+                    TextObject text = item as TextObject;
+                    if (text != null && text.Text != null && text.Text.IndexOf("LOGICAL DATA", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        text.Text = "Software by - NEXUS CODE LABS";
+                    }
+                }
+            }
+        }
+
+        public void PrintJobCard(string jobNo)
+        {
+            crdReportDocument.Load(Application.StartupPath + "\\rpt_JobDetails.rpt");
+            crdReportDocument.Refresh();
+            ApplyBrand(crdReportDocument);
+            ApplyInfo(crdReportDocument);
+            crdReportDocument.SetParameterValue("VNO", jobNo);
+            crdReportDocument.SetParameterValue("SEQ", jobNo);
+            if (crdReportDocument.Rows.Count > 0)
+            {
+                crdReportDocument.PrintToPrinter(1, false, 0, 0);
+            }
+            else
+            {
+                MessageBox.Show("No data for Selected Criteria");
+            }
+        }
+
+        public void PrintInvoice(string jobNo)
+        {
+            ReportDocument invoice = new ReportDocument();
+            try
+            {
+                invoice.Load(Application.StartupPath + "\\rpt_Invoice.rpt");
+                invoice.Refresh();
+                ApplyBrand(invoice);
+                ApplyInfo(invoice);
+                invoice.SetParameterValue("VNO", jobNo);
+                if (invoice.Rows.Count > 0)
+                {
+                    invoice.PrintToPrinter(1, false, 0, 0);
+                }
+                else
+                {
+                    MessageBox.Show("No data for Selected Criteria");
+                }
+            }
+            finally
+            {
+                invoice.Close();
+                invoice.Dispose();
+            }
+        }
 
         public void GetReportCriteriaB(string strReportName, string strCriteria, int intYEAR, int intMONTH)
         {
@@ -268,6 +332,32 @@ namespace Billing_Inventory_Management_System
             //      }
         }
 
+        private static string GetCurrentCashier()
+        {
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                SqlConnection conn = obyConn.Connect();
+                try
+                {
+                    SqlCommand cmd = new SqlCommand("SELECT C_USER FROM [CURRENT_USER]", conn);
+                    object result = cmd.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        return result.ToString();
+                    }
+                }
+                finally
+                {
+                    conn.Close();
+                }
+            }
+            catch
+            {
+            }
+            return "";
+        }
+
         public void ApplyInfo(CrystalDecisions.CrystalReports.Engine.ReportDocument _oRpt)
         {
             Connection.DatabaseConnection obyConn;
@@ -302,6 +392,15 @@ namespace Billing_Inventory_Management_System
 
                 oCRTabl.ApplyLogOnInfo(oCRTableLogonInfo);
 
+            }
+            foreach (CrystalDecisions.CrystalReports.Engine.ReportDocument subReport in _oRpt.Subreports)
+            {
+                foreach (CrystalDecisions.CrystalReports.Engine.Table subTable in subReport.Database.Tables)
+                {
+                    oCRTableLogonInfo = subTable.LogOnInfo;
+                    oCRTableLogonInfo.ConnectionInfo = oCRConnectionInfo;
+                    subTable.ApplyLogOnInfo(oCRTableLogonInfo);
+                }
             }
             _conn.Close();
         }

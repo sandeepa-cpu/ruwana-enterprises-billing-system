@@ -357,10 +357,13 @@ namespace Billing_Inventory_Management_System
 
         private void frm_IssueGoods_Load(object sender, EventArgs e)
         {
-            frm_JobCreation frm_Job = new frm_JobCreation();
+            UiTheme.StyleForm(this);
             try
             {
-                txtNo.Text = VehicleNO.ToString();
+                if (VehicleNO != null)
+                {
+                    txtNo.Text = VehicleNO.ToString();
+                }
             }
             catch (Exception)
             {

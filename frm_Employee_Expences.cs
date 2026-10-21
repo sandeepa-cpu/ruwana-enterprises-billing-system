@@ -22,6 +22,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_Daily_Expences_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             
             Exp();
             PRO_DATE();

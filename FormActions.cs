@@ -9,25 +9,34 @@ namespace Billing_Inventory_Management_System
     {
         public static void Standardize(Form form)
         {
+            Size actionSize = new Size(110, 36);
             Button add = Find(form, "btn_Add");
             if (add != null && add.Text.IndexOf("Add", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 add.Text = "Save";
+            }
+            if (add != null)
+            {
+                add.Size = actionSize;
+                UiTheme.StylePrimary(add);
             }
 
             Button quit = Find(form, "btn_Quit");
             if (quit != null)
             {
                 quit.Text = "Close";
+                quit.Size = actionSize;
+                UiTheme.StyleSecondary(quit);
             }
 
-            if (quit != null && Find(form, "btn_Clear") == null)
+            Button clear = Find(form, "btn_Clear");
+            if (quit != null && clear == null)
             {
-                Button clear = new Button();
+                clear = new Button();
                 clear.Name = "btn_Clear";
                 clear.Text = "Clear";
-                clear.Size = quit.Size;
-                clear.Location = new Point(Math.Max(8, quit.Left - quit.Width - 8), quit.Top);
+                clear.Size = actionSize;
+                clear.Location = new Point(Math.Max(8, quit.Left - actionSize.Width - 8), quit.Top);
                 clear.Anchor = quit.Anchor;
                 clear.Click += delegate
                 {
@@ -40,6 +49,11 @@ namespace Billing_Inventory_Management_System
                     }
                 };
                 quit.Parent.Controls.Add(clear);
+            }
+            if (clear != null)
+            {
+                clear.Size = actionSize;
+                UiTheme.StyleSecondary(clear);
             }
         }
 

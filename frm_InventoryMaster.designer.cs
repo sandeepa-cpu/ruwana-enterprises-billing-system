@@ -282,7 +282,8 @@ namespace Billing_Inventory_Management_System
             this.Grid_A.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
             this.Grid_A.ColumnHeadersHeight = 20;
             this.Grid_A.GridColor = System.Drawing.Color.CornflowerBlue;
-            this.Grid_A.Location = new System.Drawing.Point(-1, 0);
+            this.Grid_A.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.Grid_A.Location = new System.Drawing.Point(0, 0);
             this.Grid_A.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Grid_A.Name = "Grid_A";
             dataGridViewCellStyle19.Alignment = System.Windows.Forms.DataGridViewContentAlignment.TopCenter;
@@ -342,7 +343,7 @@ namespace Billing_Inventory_Management_System
             this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel2.Controls.Add(this.label29);
             this.panel2.Controls.Add(this.lbl_ProDate);
-            this.panel2.Location = new System.Drawing.Point(865, -7);
+            this.panel2.Location = new System.Drawing.Point(865, 0);
             this.panel2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(395, 43);
@@ -1978,7 +1979,7 @@ namespace Billing_Inventory_Management_System
             this.tabControl2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabControl2.Name = "tabControl2";
             this.tabControl2.SelectedIndex = 0;
-            this.tabControl2.Size = new System.Drawing.Size(741, 129);
+            this.tabControl2.Size = new System.Drawing.Size(741, 168);
             this.tabControl2.TabIndex = 346;
             // 
             // tabPage1
@@ -2161,8 +2162,9 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Navy;
+            this.AutoScroll = true;
             this.ClientSize = new System.Drawing.Size(1264, 930);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.tbCategory);
             this.Controls.Add(this.tbMake);
             this.Controls.Add(this.tbPart);

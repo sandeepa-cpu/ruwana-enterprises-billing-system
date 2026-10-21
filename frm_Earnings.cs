@@ -49,6 +49,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_Earnings_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             ShowDetails();
         }
 

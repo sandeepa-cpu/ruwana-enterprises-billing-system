@@ -75,6 +75,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_HoldPayOfficeEmployee_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             cmb_FindEmp.MaxDropDownItems = 10;
             Find_EMPLOYEESCode();
             Inactive();

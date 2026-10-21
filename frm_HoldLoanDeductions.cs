@@ -82,6 +82,7 @@ namespace Billing_Inventory_Management_System
        
         private void frm_HoldLoanDeductions_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             cmb_FindEmp.MaxDropDownItems = 10;
             //cmb_EMP_NO.MaxDropDownItems = 10;
             //EMPLOYEESName();

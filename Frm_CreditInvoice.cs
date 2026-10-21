@@ -25,6 +25,7 @@ namespace Billing_Inventory_Management_System
 
         private void Frm_CreditInvoice_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             ShowSupDetails();
             ShowCusDetails();
             PRO_DATE();

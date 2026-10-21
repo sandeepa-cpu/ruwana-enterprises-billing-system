@@ -479,7 +479,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.DarkGreen;
             this.ClientSize = new System.Drawing.Size(1268, 835);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.label6);
             this.Controls.Add(this.lblYear);
             this.Controls.Add(this.label58);

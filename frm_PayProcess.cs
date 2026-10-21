@@ -191,6 +191,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_PayProcess_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             //intYear = getComProfiles.GetYear();
             //intMonth = getComProfiles.GetMonth();
             //lbl_Year.Text = intYear.ToString();

@@ -70,6 +70,10 @@ namespace Billing_Inventory_Management_System
             this.label10 = new System.Windows.Forms.Label();
             this.btnPay = new System.Windows.Forms.Button();
             this.lblTOTCOST = new System.Windows.Forms.Label();
+            this.labelAdvance = new System.Windows.Forms.Label();
+            this.txtAdvance = new System.Windows.Forms.TextBox();
+            this.labelBalanceDue = new System.Windows.Forms.Label();
+            this.lblBalanceDue = new System.Windows.Forms.Label();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.lblDJ = new System.Windows.Forms.DateTimePicker();
             this.label76 = new System.Windows.Forms.Label();
@@ -706,6 +710,49 @@ namespace Billing_Inventory_Management_System
             this.lblTOTCOST.TabIndex = 313;
             this.lblTOTCOST.Text = "0.00";
             this.lblTOTCOST.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // labelAdvance
+            // 
+            this.labelAdvance.AutoSize = true;
+            this.labelAdvance.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelAdvance.Location = new System.Drawing.Point(700, 507);
+            this.labelAdvance.Name = "labelAdvance";
+            this.labelAdvance.Size = new System.Drawing.Size(148, 24);
+            this.labelAdvance.TabIndex = 382;
+            this.labelAdvance.Text = "ADVANCE (RS.)";
+            // 
+            // txtAdvance
+            // 
+            this.txtAdvance.BackColor = System.Drawing.Color.Pink;
+            this.txtAdvance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtAdvance.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtAdvance.Location = new System.Drawing.Point(700, 548);
+            this.txtAdvance.Name = "txtAdvance";
+            this.txtAdvance.Size = new System.Drawing.Size(160, 30);
+            this.txtAdvance.TabIndex = 383;
+            this.txtAdvance.Text = "0.00";
+            this.txtAdvance.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // labelBalanceDue
+            // 
+            this.labelBalanceDue.AutoSize = true;
+            this.labelBalanceDue.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelBalanceDue.Location = new System.Drawing.Point(700, 600);
+            this.labelBalanceDue.Name = "labelBalanceDue";
+            this.labelBalanceDue.Size = new System.Drawing.Size(196, 24);
+            this.labelBalanceDue.TabIndex = 384;
+            this.labelBalanceDue.Text = "BALANCE DUE (RS.)";
+            // 
+            // lblBalanceDue
+            // 
+            this.lblBalanceDue.AutoSize = true;
+            this.lblBalanceDue.Font = new System.Drawing.Font("Trebuchet MS", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblBalanceDue.ForeColor = System.Drawing.Color.RosyBrown;
+            this.lblBalanceDue.Location = new System.Drawing.Point(920, 594);
+            this.lblBalanceDue.Name = "lblBalanceDue";
+            this.lblBalanceDue.Size = new System.Drawing.Size(73, 35);
+            this.lblBalanceDue.TabIndex = 385;
+            this.lblBalanceDue.Text = "0.00";
             // 
             // tabPage1
             // 
@@ -3548,8 +3595,9 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.LightSteelBlue;
+            this.AutoScroll = true;
             this.ClientSize = new System.Drawing.Size(1285, 988);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.TABA);
             this.Controls.Add(this.cmbCat);
             this.Controls.Add(this.cmbMedia);
@@ -3598,6 +3646,10 @@ namespace Billing_Inventory_Management_System
             this.Controls.Add(this.label5);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.button31);
+            this.Controls.Add(this.lblBalanceDue);
+            this.Controls.Add(this.labelBalanceDue);
+            this.Controls.Add(this.txtAdvance);
+            this.Controls.Add(this.labelAdvance);
             this.Controls.Add(this.label72);
             this.Controls.Add(this.button21);
             this.Font = new System.Drawing.Font("Trebuchet MS", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -3674,6 +3726,10 @@ namespace Billing_Inventory_Management_System
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.Button btnPay;
         private System.Windows.Forms.Label lblTOTCOST;
+        private System.Windows.Forms.Label labelAdvance;
+        private System.Windows.Forms.TextBox txtAdvance;
+        private System.Windows.Forms.Label labelBalanceDue;
+        private System.Windows.Forms.Label lblBalanceDue;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabControl TABA;
         private System.Windows.Forms.TextBox txtA;

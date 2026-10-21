@@ -175,6 +175,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_InventoryMaster_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             tbCatInfo.Enabled = true;
             //ShowDetails();
             LoadCats();
@@ -475,6 +476,7 @@ namespace Billing_Inventory_Management_System
                     cmdsql.Connection = _Conn;
                     cmdsql.CommandText = "INSERT INTO MASTER(CATEGORY, MAKE, SUB_CAT, DESCRIPTION, PARTNO, UOM, ROL, ROQ, LOC, CAB, RACK, BIN, SPNO)VALUES ('" + cmbCat.Text + "', '" + cmb_MAKE.Text + "', '" + cmbSub.Text + "', '" + txtDesc.Text + "', '" + txt_Code.Text + "', '" + txt_UOM.Text + "', " + txt_ROL.Text + ", " + txt_ROQ.Text + ", '" + txtLocate.Text + "', '" + txt_CabNo.Text + "', '" + txt_RackNo.Text + "', '" + txt_BinNo.Text + "', '" + txt_SP.Text + "')";
                     cmdsql.ExecuteNonQuery();
+                    AuditLog.Write("EDIT", "frm_InventoryMaster", txt_Code.Text);
                     MessageBox.Show("New Part Info Successfully Added");
                     ShowDetails();
                     OPBQTY.Focus();
@@ -940,7 +942,6 @@ namespace Billing_Inventory_Management_System
             int i = (int)c;
             if (i == 13)
             {
-                txt_UOM.DroppedDown = true;
                 txt_UOM.Focus();
             }
         }
@@ -951,7 +952,6 @@ namespace Billing_Inventory_Management_System
             int i = (int)c;
             if (i == 13)
             {
-                txtLocate.DroppedDown = true;
                 txtLocate.Focus();
             }
         }
@@ -1052,6 +1052,7 @@ namespace Billing_Inventory_Management_System
                     cmdsql.Connection = _Conn;
                     cmdsql.CommandText = "DELETE FROM MASTER WHERE SEQNO = '" + SEQNO + "'";
                     SqlDataReader dreader = cmdsql.ExecuteReader();
+                    AuditLog.Write("DELETE", "frm_InventoryMaster", "SEQ " + SEQNO.ToString());
                     //}
                     _Conn.Dispose();
                     //}
@@ -1835,7 +1836,6 @@ namespace Billing_Inventory_Management_System
             int i = (int)c;
             if (i == 13)
             {
-                cmb_MAKE.DroppedDown = true;
                 cmb_MAKE.Focus();
             }
         }
@@ -1846,7 +1846,6 @@ namespace Billing_Inventory_Management_System
             int i = (int)c;
             if (i == 13)
             {
-                cmbSub.DroppedDown = true;
                 cmbSub.Focus();
             }
         }

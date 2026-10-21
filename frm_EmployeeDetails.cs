@@ -31,8 +31,8 @@ namespace Billing_Inventory_Management_System
         int Find_SUPERVISORS = 0;
 
         private void tb_EmployeeDetails_Load(object sender, EventArgs e)
-        {           
-
+        {
+            UiTheme.StyleForm(this);
             txt_Title.Focus();
             Connection.DatabaseConnection obyConn;
             obyConn = new Connection.DatabaseConnection();

@@ -354,7 +354,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(858, 509);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.btn_Quit);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.btn_Up1);

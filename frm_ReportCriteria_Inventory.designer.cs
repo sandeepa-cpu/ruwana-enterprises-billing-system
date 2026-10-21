@@ -674,7 +674,7 @@ namespace Billing_Inventory_Management_System
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(489, 97);
+            this.panel1.Size = new System.Drawing.Size(489, 252);
             this.panel1.TabIndex = 1;
             // 
             // groupBox3

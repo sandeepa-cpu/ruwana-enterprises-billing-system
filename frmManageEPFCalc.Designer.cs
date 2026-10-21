@@ -138,7 +138,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.LightSteelBlue;
             this.ClientSize = new System.Drawing.Size(435, 502);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.button1);
             this.Controls.Add(this.btnAddBacktoReport);
             this.Controls.Add(this.btnDeselect);

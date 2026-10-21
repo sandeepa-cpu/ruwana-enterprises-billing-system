@@ -249,19 +249,25 @@ namespace Billing_Inventory_Management_System
             // comboBox1
             // 
             this.comboBox1.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.comboBox1.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            this.comboBox1.DropDownHeight = 120;
+            this.comboBox1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBox1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.comboBox1.Font = new System.Drawing.Font("Trebuchet MS", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.comboBox1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.comboBox1.FormattingEnabled = true;
+            this.comboBox1.IntegralHeight = false;
+            this.comboBox1.ItemHeight = 32;
             this.comboBox1.Items.AddRange(new object[] {
             "ADMIN",
             "USER",
             "REPORTS ONLY"});
             this.comboBox1.Location = new System.Drawing.Point(176, 141);
             this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(188, 26);
+            this.comboBox1.Size = new System.Drawing.Size(260, 38);
             this.comboBox1.TabIndex = 41;
+            this.comboBox1.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.comboBox1_DrawItem);
             this.comboBox1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.comboBox1_KeyPress);
-            this.comboBox1.SelectedValueChanged += new System.EventHandler(this.comboBox1_SelectedValueChanged);
+            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
             // frm_CreateUsers
             // 
@@ -269,7 +275,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
             this.ClientSize = new System.Drawing.Size(492, 303);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.button32);
             this.Controls.Add(this.label58);
             this.Controls.Add(this.groupBox2);

@@ -243,7 +243,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.LightSteelBlue;
             this.ClientSize = new System.Drawing.Size(953, 868);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.cmb_Find_Emp);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.label2);

@@ -176,9 +176,11 @@ namespace Billing_Inventory_Management_System
 
         private void frm_ReturnSuppliers_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             Find_Suppliers();
             //Load_Data();
             PRO_DATE();
+            timer1.Enabled = true;
         }
 
         private void PRO_DATE()
@@ -437,9 +439,13 @@ namespace Billing_Inventory_Management_System
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            timer1.Enabled = false;
+            if (!this.Visible)
+            {
+                return;
+            }
             cmbSup.Focus();
             cmbSup.DroppedDown = true;
-            timer1.Enabled = false;
         }
 
      

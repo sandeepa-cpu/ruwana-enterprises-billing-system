@@ -92,6 +92,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_ProcessLogIn_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             timer1.Enabled = true;
             txt_Password.Focus();
         }

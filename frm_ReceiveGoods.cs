@@ -73,7 +73,7 @@ namespace Billing_Inventory_Management_System
                     cmdsql.Connection = _Conn;
                     cmdsql.CommandText = "INSERT INTO RECEIVED_ITEMS (BARNO, SYS_USER, PARTNO, SUPPLIER, INV_NO, QTY, BAL_QTY, PRICE, S_NO, REMARKS, PRO_DATE, TOT, STATUS, DIS_PRICE, ISSUE_PRICE) VALUES ('" + txtBarNo.Text + "', '" + lblUser.Text + "', '" + cmbPartNO.Text + "','" + lbl_SupCode.Text + "','" + txtInvoice.Text + "', '" + txt_Qty.Text + "', '" + txt_Qty.Text + "','" + txt_Price.Text + "', '" + txtBarNo.Text + "','" + txtRemarks.Text + "',Convert(DateTime,'" + lbl_Date.Text + "'),'" + lbl_TotCost.Text + "', '1','" + txt_Dis.Text + "', '" + C + "')";
                     cmdsql.ExecuteNonQuery();
-                    
+                    AuditLog.Write("EDIT", "frm_ReceiveGoods", cmbPartNO.Text + " invoice " + txtInvoice.Text);
                     //MessageBox.Show("Items Received Entry Successfully Added");
                 //}
                 //catch (Exception)
@@ -336,6 +336,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_ReceiveGoods_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             //frm_SupplierProfile frm_User = new frm_SupplierProfile();
             //frm_User.MdiParent = this;
             LoadINo();
@@ -353,20 +354,32 @@ namespace Billing_Inventory_Management_System
             obyConn = new Connection.DatabaseConnection();
             _Conn = obyConn.Connect();
             SqlCommand cmdsql = new SqlCommand();
-            cmdsql.Connection = _Conn;
-            cmdsql.CommandText = "SELECT SEQ_NO AS SEQ_NO, INV_NO AS INV_NO FROM RECEIVED_ITEMS ORDER BY SEQ_NO DESC";
-            SqlDataReader dreader = cmdsql.ExecuteReader();
-            while (dreader.Read())
+            SqlDataReader dreader = null;
+            try
             {
-                int NO = int.Parse(dreader["INV_NO"].ToString());
-                NO = NO + 1;
-
-                txtInvoice.Text = NO.ToString();
-                return;
+                cmdsql.Connection = _Conn;
+                cmdsql.CommandText = "SELECT SEQ_NO AS SEQ_NO, INV_NO AS INV_NO FROM RECEIVED_ITEMS ORDER BY SEQ_NO DESC";
+                dreader = cmdsql.ExecuteReader();
+                while (dreader.Read())
+                {
+                    int NO = int.Parse(dreader["INV_NO"].ToString());
+                    NO = NO + 1;
+                    txtInvoice.Text = NO.ToString();
+                    break;
+                }
             }
-            cmdsql.Dispose();
-            dreader.Dispose();
-            _Conn.Close();
+            finally
+            {
+                if (dreader != null)
+                {
+                    dreader.Dispose();
+                }
+                cmdsql.Dispose();
+                if (_Conn != null)
+                {
+                    _Conn.Close();
+                }
+            }
         }
 
         private void Load_Data_PARTNO()
@@ -1073,7 +1086,6 @@ namespace Billing_Inventory_Management_System
                 LoadPart();
 
                 cmbPartNO.Focus();
-                cmbPartNO.DroppedDown = true;
             }
         }
 
@@ -1083,7 +1095,6 @@ namespace Billing_Inventory_Management_System
             int i = (int)c;
             if (i == 13)
             {
-                cmbMake.DroppedDown = true;
                 cmbMake.Focus();
             }
         }
@@ -1094,7 +1105,6 @@ namespace Billing_Inventory_Management_System
             int i = (int)c;
             if (i == 13)
             {
-                cmbPartNO.DroppedDown = true;
                 cmbPartNO.Focus();
             }
         }
@@ -1922,7 +1932,6 @@ namespace Billing_Inventory_Management_System
                 LoadPart();
 
                 cmbPartNO.Focus();
-                cmbPartNO.DroppedDown = true;
             }
             
         }

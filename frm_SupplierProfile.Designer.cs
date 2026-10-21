@@ -224,7 +224,7 @@ namespace Billing_Inventory_Management_System
             // btn_Add
             // 
             this.btn_Add.Font = new System.Drawing.Font("Trebuchet MS", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btn_Add.Location = new System.Drawing.Point(194, 313);
+            this.btn_Add.Location = new System.Drawing.Point(253, 742);
             this.btn_Add.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btn_Add.Name = "btn_Add";
             this.btn_Add.Size = new System.Drawing.Size(137, 39);
@@ -291,7 +291,7 @@ namespace Billing_Inventory_Management_System
             // btn_Quit
             // 
             this.btn_Quit.Font = new System.Drawing.Font("Trebuchet MS", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btn_Quit.Location = new System.Drawing.Point(476, 750);
+            this.btn_Quit.Location = new System.Drawing.Point(489, 742);
             this.btn_Quit.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btn_Quit.Name = "btn_Quit";
             this.btn_Quit.Size = new System.Drawing.Size(137, 39);
@@ -489,7 +489,8 @@ namespace Billing_Inventory_Management_System
             this.button1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("button1.BackgroundImage")));
             this.button1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.button1.Font = new System.Drawing.Font("Trebuchet MS", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.Location = new System.Drawing.Point(725, 2);
+            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.button1.Location = new System.Drawing.Point(576, 8);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(27, 28);
             this.button1.TabIndex = 268;
@@ -507,7 +508,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.CornflowerBlue;
             this.ClientSize = new System.Drawing.Size(615, 790);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.button1);
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.label58);

@@ -20,7 +20,8 @@ namespace Billing_Inventory_Management_System
 
         public frm_MainMenu()
         {
-            InitializeComponent();            
+            InitializeComponent();
+            BuildNavigation();
         }
 
         private void toWondowsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -323,38 +324,27 @@ namespace Billing_Inventory_Management_System
 
         private void LoadDashboard()
         {
-            Panel panel = new Panel();
-            panel.Name = "dashboardPanel";
-            panel.Height = 56;
-            panel.Dock = DockStyle.Bottom;
-            panel.BackColor = Color.WhiteSmoke;
-
-            Label jobs = new Label();
-            Label stock = new Label();
-            Label credit = new Label();
-            jobs.AutoSize = true;
-            stock.AutoSize = true;
-            credit.AutoSize = true;
-            jobs.Location = new Point(16, 18);
-            stock.Location = new Point(320, 18);
-            credit.Location = new Point(640, 18);
-            jobs.Font = new Font(jobs.Font, FontStyle.Bold);
-            stock.Font = jobs.Font;
-            credit.Font = jobs.Font;
-            panel.Controls.Add(jobs);
-            panel.Controls.Add(stock);
-            panel.Controls.Add(credit);
-            this.Controls.Add(panel);
-            panel.BringToFront();
+            Panel row = new Panel();
+            row.Name = "kpiRow";
+            row.Size = new Size(1060, 110);
+            row.BackColor = Color.Transparent;
+            Label jobs = AddKpiCard(row, 0, "\uE787", "Jobs today");
+            Label stock = AddKpiCard(row, 270, "\uE7BF", "Stock value");
+            Label credit = AddKpiCard(row, 540, "\uE8C7", "Unpaid credit");
+            AddKpiCard(row, 810, "\uE7BA", "Low stock");
+            BindCardClick(row.Controls["kpiUnpaidcredit"] as Panel, creditOverview_Click);
+            BindCardClick(row.Controls["kpiLowstock"] as Panel, lowStock_Click);
+            this.Controls.Add(row);
+            LayoutChrome();
 
             SqlConnection conn = null;
             try
             {
                 Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
                 conn = obyConn.Connect();
-                jobs.Text = "Jobs today: " + DashboardCount(conn, "SELECT COUNT(*) FROM JOB_DETAILS WHERE JOB_DATE >= CONVERT(date, GETDATE()) AND JOB_DATE < DATEADD(day, 1, CONVERT(date, GETDATE()))");
-                stock.Text = "Stock value: " + DashboardCount(conn, "SELECT ISNULL(SUM(BAL_QTY * ISSUE_PRICE), 0) FROM RECEIVED_ITEMS WHERE DEL = 0 OR DEL IS NULL");
-                credit.Text = "Unpaid credit: " + DashboardCount(conn, "SELECT ISNULL(SUM(CREDIT), 0) FROM ISSUED_TOTALS WHERE PAID = 0 OR PAID IS NULL");
+                jobs.Text = DashboardCount(conn, "SELECT COUNT(*) FROM JOB_DETAILS WHERE JOB_DATE >= CONVERT(date, GETDATE()) AND JOB_DATE < DATEADD(day, 1, CONVERT(date, GETDATE()))");
+                stock.Text = DashboardCount(conn, "SELECT ISNULL(SUM(BAL_QTY * ISSUE_PRICE), 0) FROM RECEIVED_ITEMS WHERE DEL = 0 OR DEL IS NULL");
+                credit.Text = DashboardCount(conn, "SELECT ISNULL(SUM(CREDIT), 0) FROM ISSUED_TOTALS WHERE PAID = 0 OR PAID IS NULL");
             }
             catch (Exception ex)
             {
@@ -368,6 +358,137 @@ namespace Billing_Inventory_Management_System
                     conn.Dispose();
                 }
             }
+            RefreshLowStock();
+        }
+
+        private const int CreditOverdueDays = 30;
+
+        private const string LowStockSql =
+            "SELECT m.PARTNO, m.DESCRIPTION, m.ROL, ISNULL(SUM(r.BAL_QTY), 0) AS ON_HAND " +
+            "FROM MASTER m " +
+            "LEFT JOIN RECEIVED_ITEMS r ON r.PARTNO = m.PARTNO AND (r.DEL = 0 OR r.DEL IS NULL) " +
+            "WHERE (m.DEL = 0 OR m.DEL IS NULL) " +
+            "GROUP BY m.PARTNO, m.DESCRIPTION, m.ROL " +
+            "HAVING ISNULL(SUM(r.BAL_QTY), 0) <= m.ROL AND m.ROL > 0";
+
+        private void RefreshLowStock()
+        {
+            Label value = FindKpiValue("kpiLowstockValue");
+            if (value == null)
+            {
+                return;
+            }
+            SqlConnection conn = null;
+            try
+            {
+                Connection.DatabaseConnection obyConn = new Connection.DatabaseConnection();
+                conn = obyConn.Connect();
+                value.Text = DashboardCount(conn, "SELECT COUNT(*) FROM (" + LowStockSql + ") AS low_stock");
+                value.ForeColor = value.Text == "0" ? UiTheme.Ink : Color.FromArgb(180, 83, 9);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("frm_MainMenu.LowStock", ex);
+                value.Text = "-";
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    conn.Dispose();
+                }
+            }
+        }
+
+        private Label FindKpiValue(string name)
+        {
+            Control[] found = this.Controls.Find(name, true);
+            if (found.Length == 0)
+            {
+                return null;
+            }
+            return found[0] as Label;
+        }
+
+        private static void BindCardClick(Panel card, EventHandler handler)
+        {
+            if (card == null || handler == null)
+            {
+                return;
+            }
+            card.Cursor = Cursors.Hand;
+            card.Click += handler;
+            foreach (Control child in card.Controls)
+            {
+                child.Cursor = Cursors.Hand;
+                child.Click += handler;
+            }
+        }
+
+        private void lowStock_Click(object sender, EventArgs e)
+        {
+            frm_InsightList list = new frm_InsightList("Low stock", LowStockSql);
+            list.Show(this);
+        }
+
+        private void creditOverview_Click(object sender, EventArgs e)
+        {
+            string sql =
+                "SELECT CASE WHEN c.NAME IS NULL THEN 'Unassigned' ELSE c.NAME END AS CUSTOMER, " +
+                "COUNT(*) AS INVOICES, SUM(t.CREDIT) AS UNPAID, MIN(j.OLDEST) AS OLDEST, " +
+                "CASE WHEN MIN(j.OLDEST) < DATEADD(day, -" + CreditOverdueDays.ToString() + ", CAST(GETDATE() AS date)) THEN 'Yes' ELSE 'No' END AS OVERDUE " +
+                "FROM ISSUED_TOTALS t " +
+                "LEFT JOIN (SELECT INV_NO, MIN(CUSTOMER_ID) AS CUSTOMER_ID, MIN(COALESCE(INV_DATE, JOB_DATE)) AS OLDEST FROM JOB_DETAILS GROUP BY INV_NO) j ON j.INV_NO = t.INV_NO " +
+                "LEFT JOIN CUSTOMER_INFO c ON c.SEQ_NO = j.CUSTOMER_ID " +
+                "WHERE (t.PAID = 0 OR t.PAID IS NULL) AND ISNULL(t.CREDIT, 0) > 0 " +
+                "GROUP BY CASE WHEN c.NAME IS NULL THEN 'Unassigned' ELSE c.NAME END " +
+                "ORDER BY SUM(t.CREDIT) DESC";
+            frm_InsightList list = new frm_InsightList("Unpaid credit", sql);
+            list.Show(this);
+        }
+
+        private static Label AddKpiCard(Panel row, int left, string icon, string caption)
+        {
+            Panel shadow = new Panel();
+            shadow.Name = "kpiShadow" + caption.Replace(" ", "");
+            shadow.Location = new Point(left + 2, 2);
+            shadow.Size = new Size(250, 100);
+            shadow.BackColor = Color.FromArgb(208, 213, 221);
+            row.Controls.Add(shadow);
+            UiTheme.RoundPanel(shadow, 8);
+
+            Panel card = new Panel();
+            card.Name = "kpi" + caption.Replace(" ", "");
+            card.Location = new Point(left, 0);
+            card.Size = new Size(250, 100);
+            card.BackColor = Color.White;
+            Label glyph = new Label();
+            glyph.Name = "navKpiIcon";
+            glyph.Text = icon;
+            glyph.Font = new Font("Segoe MDL2 Assets", 20F);
+            glyph.ForeColor = UiTheme.Primary;
+            glyph.Location = new Point(16, 16);
+            glyph.AutoSize = true;
+            Label title = new Label();
+            title.Text = caption;
+            title.Font = new Font("Segoe UI", 9F);
+            title.ForeColor = UiTheme.Muted;
+            title.Location = new Point(56, 18);
+            title.AutoSize = true;
+            Label value = new Label();
+            value.Name = card.Name + "Value";
+            value.Text = "...";
+            value.Font = UiTheme.ValueFont;
+            value.ForeColor = UiTheme.Ink;
+            value.Location = new Point(16, 52);
+            value.AutoSize = true;
+            card.Controls.Add(glyph);
+            card.Controls.Add(title);
+            card.Controls.Add(value);
+            row.Controls.Add(card);
+            card.BringToFront();
+            UiTheme.RoundPanel(card, 8);
+            return value;
         }
 
         private static string DashboardCount(SqlConnection conn, string sql)
@@ -379,6 +500,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_MainMenu_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             LOAD_COMPANYNAME();
             LOAD_COMPANYCITY();
             LOAD_COMPANYADDRESS();
@@ -1267,7 +1389,7 @@ namespace Billing_Inventory_Management_System
         private void toolStripMenuItem10_Click(object sender, EventArgs e)
         {
             frm_JobCreation frm_JOB = new frm_JobCreation();
-            frm_JOB.Show();
+            AppWorkspace.Open(frm_JOB, "Job Card");
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
@@ -1395,7 +1517,7 @@ namespace Billing_Inventory_Management_System
         private void button8_Click(object sender, EventArgs e)
         {
             frm_InventoryMaster frm_INV = new frm_InventoryMaster();
-            frm_INV.Show();
+            AppWorkspace.Open(frm_INV, "Inventory");
         }
 
         private void button5_Click_1(object sender, EventArgs e)
@@ -1417,13 +1539,13 @@ namespace Billing_Inventory_Management_System
         private void button7_Click_1(object sender, EventArgs e)
         {
             frm_SupplierProfile frm_Sup = new frm_SupplierProfile();
-            frm_Sup.Show();
+            AppWorkspace.Open(frm_Sup, "Suppliers");
         }
 
         private void button6_Click_1(object sender, EventArgs e)
         {
             frm_CustomerProfile frm_Cus = new frm_CustomerProfile();
-            frm_Cus.Show();
+            AppWorkspace.Open(frm_Cus, "Customers");
         }
 
         private void button12_Click(object sender, EventArgs e)
@@ -1435,7 +1557,7 @@ namespace Billing_Inventory_Management_System
         private void button16_Click_1(object sender, EventArgs e)
         {
             frm_ReceiveGoods frm_RGOODS = new frm_ReceiveGoods();
-            frm_RGOODS.Show();
+            AppWorkspace.Open(frm_RGOODS, "Receive stock");
         }
 
         private void button13_Click_1(object sender, EventArgs e)
@@ -1465,9 +1587,43 @@ namespace Billing_Inventory_Management_System
 
         private void button20_Click_1(object sender, EventArgs e)
         {
-            this.Close();
-            frm_UserLogIn frm_User = new frm_UserLogIn();
-            frm_User.Show();
+            List<Form> open = new List<Form>();
+            foreach (Form form in Application.OpenForms)
+            {
+                open.Add(form);
+            }
+            frm_UserLogIn login = null;
+            foreach (Form form in open)
+            {
+                if (form is frm_UserLogIn)
+                {
+                    login = (frm_UserLogIn)form;
+                    break;
+                }
+            }
+            if (login == null || login.IsDisposed)
+            {
+                login = new frm_UserLogIn();
+            }
+            login.txt_User.Text = "";
+            login.txt_Password.Text = "";
+            login.Show();
+            login.Activate();
+            foreach (Form form in open)
+            {
+                if (form == login || form is frm_Splash || form.IsDisposed)
+                {
+                    continue;
+                }
+                try
+                {
+                    form.Close();
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Write("frm_MainMenu.LogOff", ex);
+                }
+            }
         }
 
         private void button19_Click_1(object sender, EventArgs e)

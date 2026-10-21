@@ -79,7 +79,7 @@ namespace Billing_Inventory_Management_System
             // btn_Add
             // 
             this.btn_Add.Font = new System.Drawing.Font("Trebuchet MS", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btn_Add.Location = new System.Drawing.Point(614, 177);
+            this.btn_Add.Location = new System.Drawing.Point(388, 716);
             this.btn_Add.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btn_Add.Name = "btn_Add";
             this.btn_Add.Size = new System.Drawing.Size(133, 55);
@@ -145,7 +145,7 @@ namespace Billing_Inventory_Management_System
             // btn_Quit
             // 
             this.btn_Quit.Font = new System.Drawing.Font("Trebuchet MS", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btn_Quit.Location = new System.Drawing.Point(614, 723);
+            this.btn_Quit.Location = new System.Drawing.Point(624, 716);
             this.btn_Quit.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btn_Quit.Name = "btn_Quit";
             this.btn_Quit.Size = new System.Drawing.Size(133, 38);
@@ -582,7 +582,7 @@ namespace Billing_Inventory_Management_System
             // 
             // timer1
             // 
-            this.timer1.Enabled = true;
+            this.timer1.Enabled = false;
             this.timer1.Interval = 10;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick_1);
             // 
@@ -592,7 +592,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Thistle;
             this.ClientSize = new System.Drawing.Size(750, 764);
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.Controls.Add(this.button32);
             this.Controls.Add(this.label58);
             this.Controls.Add(this.tabControl1);

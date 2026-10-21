@@ -91,6 +91,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_BankBranchDetails_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             ShowInOutDetails();
             PRO_DATE();
         }

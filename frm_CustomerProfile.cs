@@ -80,6 +80,7 @@ namespace Billing_Inventory_Management_System
                     cmdsql.Connection = _Conn;
                     cmdsql.CommandText = "INSERT INTO CUSTOMER_INFO (TITLE, NAME, ADDRESS, RESIDENT_NO, MOBILE_NO, FILE_NO, USER_ACTION) VALUES ('" + txt_Title.Text + "', '" + txt_Initials.Text + "', '" + txt_Address.Text + "', '" + txt_Resident.Text + "', '" + txt_Mobile.Text + "', '" + txt_FileNo.Text + "', '1')";
                     cmdsql.ExecuteNonQuery();
+                    AuditLog.Write("EDIT", "frm_CustomerProfile", txt_Initials.Text);
                     MessageBox.Show("New Customer Successfully Added");
                     ShowDetailsModel();
                 }
@@ -122,6 +123,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_CustomerProfile_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             FormActions.Standardize(this);
             ShowDetailsModel();
             timer1.Enabled = true;
@@ -266,9 +268,12 @@ namespace Billing_Inventory_Management_System
 
         private void timer1_Tick_1(object sender, EventArgs e)
         {
-            txt_Title.Focus();
-            txt_Title.DroppedDown = true;
             timer1.Enabled = false;
+            if (!this.Visible)
+            {
+                return;
+            }
+            txt_Title.Focus();
         }
     }
 }

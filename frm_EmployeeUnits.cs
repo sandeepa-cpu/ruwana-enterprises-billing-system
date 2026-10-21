@@ -158,6 +158,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_EmployeeUnits_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             txt_Year.Text = Convert.ToString(getComProfiles.GetYear());
             txt_Month.Text =Convert.ToString(getComProfiles.GetMonth());
             intYear = getComProfiles.GetYear();

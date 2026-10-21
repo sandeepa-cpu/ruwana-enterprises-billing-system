@@ -1064,7 +1064,7 @@ namespace Billing_Inventory_Management_System
             this.tabControl2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabControl2.Name = "tabControl2";
             this.tabControl2.SelectedIndex = 0;
-            this.tabControl2.Size = new System.Drawing.Size(825, 124);
+            this.tabControl2.Size = new System.Drawing.Size(1040, 124);
             this.tabControl2.TabIndex = 129;
             // 
             // tabPage3
@@ -2167,6 +2167,7 @@ namespace Billing_Inventory_Management_System
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.HotTrack;
+            this.AutoScroll = true;
             this.ClientSize = new System.Drawing.Size(1284, 957);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.label32);

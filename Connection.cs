@@ -35,6 +35,7 @@ namespace Billing_Inventory_Management_System
                 builder.InitialCatalog = xmlNode["DBName"].InnerText;
                 builder.UserID = userId;
                 builder.Password = password;
+                builder.PersistSecurityInfo = true;
                 builder.Pooling = true;
 
                 sqlDBConnection = new SqlConnection(builder.ConnectionString);

@@ -67,6 +67,7 @@ namespace Billing_Inventory_Management_System
 
         private void frm_Attendance_Load(object sender, EventArgs e)
         {
+            UiTheme.StyleForm(this);
             PRO_DATE();
             EMPLOAD();
             //lblUser.Text = frm_UserLogIn.UserID;
